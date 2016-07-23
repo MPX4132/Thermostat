@@ -3,6 +3,8 @@
 // the international standard as the base temperature.
 // =============================================================================
 
+#include <limits>
+
 template<typename NumericType>
 class Temperature 
 {
@@ -85,7 +87,7 @@ public:
 	{
 		// If we're not really converting, skip everything...
 		if (inputScale == outputScale) return value;
-		//if (inputScale == Internal || outputScale == Internal) return value;
+		if (inputScale == Internal || outputScale == Internal) return value;
 		
 		// Fugly code below, brace yourself... Can't think of anything better...
 		switch (inputScale) 
@@ -96,6 +98,8 @@ public:
 				{
 					case Fahrenheit:
 						return (value + 40) * 1.80 - 40;
+						
+					default: break;
 				}
 			}	break;
 			
@@ -105,15 +109,16 @@ public:
 				{
 					case Celsius:
 						return (value + 40) / 1.80 - 40;
+						
+					default: break;
 				}
 			}	break;
 			
-			default:
-				break;
+			default: break;
 		} 
 		
-		// If everything failed, idk...
-		return value;
+		// If no match was found, return the highest possible value as an error.
+		return std::numeric_limits<NumericType>::max();
 	}
 								
 	Temperature(const Temperature<NumericType>& temperature)

@@ -5,6 +5,7 @@
 #include "Thermostat.hpp"
 
 
+#warning Remember to remove your access point data before commiting!
 const char *WIFI_SSID = "SSIDHERE";
 const char *WIFI_PASS = "PASSHERE";
 

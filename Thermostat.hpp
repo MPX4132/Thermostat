@@ -4,26 +4,37 @@
 // =============================================================================
 
 #include "Temperature.hpp"
+#include "Scheduler.hpp"
 
-class Thermostat {
+class Thermostat : protected Scheduler::Event 
+{
 public:
-	enum Mode {
+	enum Mode 
+	{
 		Off,
 		Cooling,
 		Heating,
 		Auto
 	};
 	
-	enum Measurement {
-		HI,
-		Temp
+	enum Perception 		// Really don't like this, the name sucks.
+	{
+		TemperatureUnit,	// Control based on temperature
+		HeatIndexUnit		// Control based on heat index
 	};
 	
 	virtual Mode mode() const;
 	void setMode(const Mode mode = Off);
 
-	virtual Temperature<int> temperature() const;
-	void setTemperature(const Temperature<int>& temperature);
+	// This method returns the temperature as perceived by this instance.
+	// Remember that the perception type affects this value.
+	virtual Temperature<int> temperature(int const sensorID = 0) const;
+	
+	virtual Temperature<int> targetTemperature() const;
+	virtual void setTargetTemperature(Temperature<int> const  targetTemperature);
+	
+	Perception perceptionType() const;
+	void setPerceptionType(Perception const perceptionType);
 	
 	//Sensor sensor(unsigned short i = 0); 
 
@@ -33,4 +44,5 @@ public:
 protected:
 	Mode _mode;
 	Temperature<int> _temperature;
+	Scheduler _scheduler;
 };

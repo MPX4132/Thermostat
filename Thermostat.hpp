@@ -21,7 +21,7 @@ public:
 	{
 		TemperatureUnit,	// Control based on temperature
 		HeatIndexUnit		// Control based on heat index
-	};
+	};	
 	
 	virtual Mode mode() const;
 	void setMode(const Mode mode = Off);
@@ -38,11 +38,19 @@ public:
 	
 	//Sensor sensor(unsigned short i = 0); 
 
-	virtual ~Thermostat();
+	virtual ~Thermostat(Scheduler::Time const updateInterval = 5);
 	Thermostat();
 	
 protected:
 	Mode _mode;
 	Temperature<int> _temperature;
 	Scheduler _scheduler;
+	Scheduler::Timer _updateInterval;
+	Scheduler::Timer _updateTime;
+	
+	// Scheduler::Event methods
+	Scheduler::Time time() const;
+	bool finished() const;
+	int execute(Scheduler::Time const updateTime, 
+				Scheduler::Time const updateDelay);
 };

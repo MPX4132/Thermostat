@@ -24,12 +24,17 @@ void Thermostat::setTargetTemperature(Temperature<int> const targetTemperature)
 	_temperature = temperature;
 }
 
+Scheduler::Time Thermostat::time() const
+{
+	return _updateTime;
+}
+
 bool Thermostat::finished() const
 {
 	return false;
 }
 
-bool Thermostat::execute(Scheduler::Time const updateTime, 
+int Thermostat::execute(Scheduler::Time const updateTime, 
 						Scheduler::Time const updateDelay)
 {
 	switch (this->mode())
@@ -45,12 +50,15 @@ bool Thermostat::execute(Scheduler::Time const updateTime,
 		default:
 			break;
 	}
+	
+	_updateTime = updateTime + _updateInterval;
 }
 
 Thermostat::~Thermostat()
 {
 }
 
-Thermostat::Thermostat()
+Thermostat::Thermostat(Scheduler::Time const updateInterval):
+_updateInterval(updateInterval)
 {
 }

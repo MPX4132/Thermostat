@@ -3,34 +3,36 @@
 // specific times, given some type of clock.
 // =============================================================================
 
+#include <vector>
 
 class Scheduler
 {
 public:
-	typedef unsigned long int Time;
+	typedef unsigned long Time;
 
 	// =========================================================================
-	// Task: This class is meant to be subclassed for scheduling code.
+	// Event: This class is meant to be subclassed for scheduling code.
 	// =========================================================================
-	class Task {
+	class Event {
 	public:
+		// Realize the implications of this...
+		// This means the subclass may change its time, requiring the scheduler
+		// to implement a means to update its internal event calling sequence.
+		virtual Time time() const = 0;
 		virtual bool finished() const = 0;
-		virtual bool execute(Time const updateTime, Time const updateDelay) = 0;
+		virtual int execute(Time const updateTime, Time const updateDelay) = 0;
 	};
 	
-	// Consider enqueueing a Task object and use Job to have a time 
-	bool enqueue(Task * const task, Time const startTime);
-	bool dequeue(Task * const task);
+	virtual bool enqueue(Event * const event);
+	virtual bool dequeue(Event const * const event);
 	
-	static bool Update(Time const updateTime);
+	void update(Time const updateTime);
+	
+	Scheduler();
+	virtual ~Scheduler();
 	
 protected:
-	struct Job {
-		Time const time;
-		Task * const task;
-		Job(Task * const task, Time const time);
-	};
-
-	static Time const _lastUpdateTime;
+	Time _lastUpdateTime;
+	std::vector<Event *> _events;
 	
 };

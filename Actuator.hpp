@@ -3,8 +3,19 @@
 // able to send output signals via the I/O rail.
 // =============================================================================
 
-class Actuator
+#include "Pin.hpp"
+
+class Actuator : public Pin::Set
 {
 public:
-	Actuator();
+
+	class Sequence // Timed states?
+	{
+	public:
+		Sequence(
+	};
+
+	bool performSequence(Sequence const sequence);
+	
+protected:
 };

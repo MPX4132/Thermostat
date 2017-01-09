@@ -32,6 +32,7 @@
 /* Begin PBXFileReference section */
 		C346B72A1E23407900BB6FEF /* Thermometer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Thermometer.cpp; sourceTree = "<group>"; };
 		C346B72B1E23407900BB6FEF /* Thermometer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Thermometer.hpp; sourceTree = "<group>"; };
+		C38D32B01E236AAF00E5B10B /* Thermostat.ino */ = {isa = PBXFileReference; lastKnownFileType = text; path = Thermostat.ino; sourceTree = "<group>"; };
 		C3FFC2441DD7B56E00C5B641 /* Thermostat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Thermostat; sourceTree = BUILT_PRODUCTS_DIR; };
 		C3FFC2471DD7B56E00C5B641 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		C3FFC25A1DD7C15D00C5B641 /* Actuator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Actuator.cpp; sourceTree = "<group>"; };
@@ -97,6 +98,7 @@
 				C346B72B1E23407900BB6FEF /* Thermometer.hpp */,
 				C3FFC2691DD7C27000C5B641 /* Thermostat.cpp */,
 				C3FFC26A1DD7C27000C5B641 /* Thermostat.hpp */,
+				C38D32B01E236AAF00E5B10B /* Thermostat.ino */,
 			);
 			path = Thermostat;
 			sourceTree = "<group>";

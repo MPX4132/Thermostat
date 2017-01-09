@@ -21,22 +21,21 @@ void Thermostat::setMode(const Thermostat::Mode mode)
     _mode = mode;
 }
 
-Temperature<int> Thermostat::temperature(int const sensorID) const
+Temperature<float> Thermostat::temperature() const
 {
-    if (sensorID >= 0 && sensorID < _sensor.size()) return _sensor[sensorID];
-    
-    // Otherwise, we're taking the average
-    Temperature<int> averageTemperature = 0;
-#warning Incomplete code here!
+    Temperature<float> averageTemperature = std::accumulate(this->thermometers.begin(),
+                                                            this->thermometers.end(),
+                                                            0.0f); // cast as float
+    if (this->thermometers.size()) averageTemperature /= this->thermometers.size();
     return averageTemperature;
 }
 
-Temperature<int> Thermostat::targetTemperature() const
+Temperature<float> Thermostat::targetTemperature() const
 {
     return this->_targetTemperature;
 }
 
-void Thermostat::setTargetTemperature(Temperature<int> const targetTemperature)
+void Thermostat::setTargetTemperature(Temperature<float> const targetTemperature)
 {
     _targetTemperature = targetTemperature;
 }
@@ -75,10 +74,14 @@ int Thermostat::execute(Scheduler::Time const updateTime,
 // =============================================================================
 #pragma mark - Thermostat : Constructors & Destructor
 // =============================================================================
-Thermostat::Thermostat(Scheduler::Time const executeTimeInterval):
+Thermostat::Thermostat(Thermometers &thermometers,
+                       Scheduler::Time const executeTimeInterval):
+thermometers(thermometers),
+_mode(Thermostat::Mode::Off),
+_measurmentType(Thermostat::Measurement::TemperatureUnit),
 Scheduler::Daemon(0, executeTimeInterval)
 {
-
+    // targetTemp & _scheduler are fine auto-initialized.
 }
 
 Thermostat::~Thermostat()

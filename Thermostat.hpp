@@ -10,6 +10,8 @@
 #define Thermostat_hpp
 
 #include <vector>
+#include <numeric>
+#include "Thermometer.hpp"
 #include "Temperature.hpp"
 #include "Scheduler.hpp"
 
@@ -20,7 +22,6 @@
 class Thermostat : protected Scheduler::Daemon
 {
 public:
-
     // ================================================================
 #pragma mark - Thermostat Types
     // ================================================================
@@ -38,6 +39,14 @@ public:
         HeatIndexUnit		// Control based on heat index
     };
     
+    typedef std::vector<Thermometer> Thermometers;
+    
+    
+    // ================================================================
+#pragma mark - Thermostat Members
+    // ================================================================
+    Thermometers thermometers;
+    
     
     // ================================================================
 #pragma mark - Thermostat Methods
@@ -45,29 +54,24 @@ public:
     virtual Mode mode() const;
     void setMode(const Mode mode = Off);
     
-    // This method returns the temperature as measured by this instance.
-    // This means the value is dependent on the measurement type.
-    virtual Temperature<int> temperature(int const sensorID = -1) const;
+    // This method returns the average temperature of the thermometers.
+    virtual Temperature<float> temperature() const;
     
-    virtual Temperature<int> targetTemperature() const;
-    virtual void setTargetTemperature(Temperature<int> const targetTemperature);
+    virtual Temperature<float> targetTemperature() const;
+    virtual void setTargetTemperature(Temperature<float> const targetTemperature);
     
     Measurement measurementType() const;
     void setMeasurementType(Measurement const measurementType = TemperatureUnit);
     
-    //Sensor sensor(unsigned short i = 0);
-    
-    Thermostat(Scheduler::Time const executeTimeInterval = 5);
+    Thermostat(Thermometers &thermometers, Scheduler::Time const executeTimeInterval = 5);
     virtual ~Thermostat();
     
 protected:
     Mode _mode;
-    Temperature<int> _targetTemperature;
+    Temperature<float> _targetTemperature;
     Measurement _measurmentType;
     Scheduler _scheduler;
     
-    std::vector<int> _sensor;
-//    TemperatureSensor *_sensor;
     
     // ================================================================
 #pragma mark - Scheduler::Event Methods

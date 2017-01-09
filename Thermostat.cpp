@@ -23,6 +23,7 @@ void Thermostat::setMode(const Thermostat::Mode mode)
 
 Temperature<float> Thermostat::temperature() const
 {
+#warning Idk what the hell I'm adding here, whoops, guess I'm tired.
     Temperature<float> averageTemperature = std::accumulate(this->thermometers.begin(),
                                                             this->thermometers.end(),
                                                             0.0f); // cast as float

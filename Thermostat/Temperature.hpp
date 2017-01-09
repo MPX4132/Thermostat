@@ -77,6 +77,14 @@ public:
         return this->value();
     }
     
+    NumericType operator+(const Temperature<NumericType>& other) {
+        return this->value() + other.value(this->scale());
+    }
+    
+    NumericType operator-(const Temperature<NumericType>& other) {
+        return this->value() - other.value(this->scale());
+    }
+    
     Scale scale() const
     {
         return this->_scale;

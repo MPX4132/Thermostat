@@ -10,6 +10,7 @@
 #define Thermostat_hpp
 
 #include <vector>
+#include "Actuator.hpp"
 #include "Thermometer.hpp"
 #include "Temperature.hpp"
 #include "Scheduler.hpp"
@@ -18,7 +19,7 @@
 // Thermostat : This class abstracts the functionality of an HVAC control system
 // and provides a simplistic interface for interacting with it.
 // =============================================================================
-class Thermostat : protected Scheduler::Daemon
+class Thermostat : protected Actuator, protected Scheduler::Daemon
 {
 public:
     // ================================================================
@@ -57,20 +58,27 @@ public:
     virtual Temperature<float> temperature();
     
     virtual Temperature<float> targetTemperature() const;
-    virtual void setTargetTemperature(Temperature<float> const targetTemperature);
+    virtual void setTargetTemperature(Temperature<float> const targetTemperature, Temperature<float> const targetTemperatureThreshold = 3);
     
     Measurement measurementType() const;
     void setMeasurementType(Measurement const measurementType = TemperatureUnit);
     
-    Thermostat(Thermometers &thermometers, Scheduler::Time const executeTimeInterval = 5);
+    // The pin order is as follows by default: {FAN call, COOL call, HEAT call}
+    Thermostat(Actuator::Pins const &pins,
+               Thermometers &thermometers,
+               Scheduler::Time const executeTimeInterval = 5);
     virtual ~Thermostat();
     
 protected:
     Mode _mode;
     Temperature<float> _targetTemperature;
+    Temperature<float> _targetTemperatureThreshold;
     Measurement _measurmentType;
     Scheduler _scheduler;
     
+    void _standby();
+    void _setCooler(bool const cool);
+    void _setHeater(bool const heat);
     
     // ================================================================
 #pragma mark - Scheduler::Event Methods

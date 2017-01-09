@@ -9,7 +9,8 @@
 const char *WIFI_SSID = "SSIDHERE";
 const char *WIFI_PASS = "PASSHERE";
 
-Thermostat thermostat;
+Thermostat::Thermometers thermometers = {Thermometer({3,4})};
+Thermostat thermostat({0,1,2}, thermometers);
 
 void setup() {
 	Serial.begin(74880);

@@ -9,7 +9,13 @@
 #include "Pin.hpp"
 
 // =============================================================================
-// Pin : Implementation
+#pragma mark - Pin : Static Variables Declaration
+// =============================================================================
+std::map<Pin::Identifier, Pin const *> Pin::_Reserved;
+
+
+// =============================================================================
+#pragma mark - Pin : Implementation
 // =============================================================================
 Pin::Identifier Pin::identity() const
 {

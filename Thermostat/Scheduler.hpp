@@ -11,6 +11,7 @@
 
 #include <set>
 #include <map>
+#include <algorithm>
 
 // =============================================================================
 // Scheduler : This class is responsible for scheduling and executing jobs at

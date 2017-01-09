@@ -83,8 +83,7 @@ protected:
     // ================================================================
 #pragma mark - Scheduler::Event Methods
     // ================================================================
-    int execute(Scheduler::Time const updateTime,
-                Scheduler::Time const updateDelay);
+    int execute(Scheduler::Time const updateTime);
 };
 
 #endif /* Thermostat_hpp */

@@ -82,8 +82,7 @@ void Thermostat::_setHeater(bool const heat)
     });
 }
 
-int Thermostat::execute(Scheduler::Time const updateTime,
-                        Scheduler::Time const updateDelay)
+int Thermostat::execute(Scheduler::Time const updateTime)
 {
     // Verify minimum pin count to properly operate an HVAC with relays (min 3).
     if (this->_pins.size() < 3) return 1; // Not enough control pins.

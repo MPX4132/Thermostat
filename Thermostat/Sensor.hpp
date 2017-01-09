@@ -22,7 +22,7 @@ public:
     typedef unsigned char Byte;
     typedef std::vector<Byte> Data;
     
-    virtual Data sense() = 0;
+    virtual Data sense();// = 0;
     
     Sensor(Actuator::Pins const &pins);
     virtual ~Sensor();

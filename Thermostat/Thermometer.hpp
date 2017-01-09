@@ -11,7 +11,7 @@
 
 #include <utility>
 #include "Temperature.hpp"
-#include "Actuator.cpp"
+#include "Actuator.hpp"
 #include "Sensor.hpp"
 
 // =============================================================================
@@ -24,7 +24,7 @@ public:
     // Range denotes the thermometer's range as a tuple, [Minimum, Maximum].
     typedef std::pair<Temperature<float>, Temperature<float>> Range;
     
-    virtual Temperature<float> temperature() = 0;
+    virtual Temperature<float> temperature();// = 0;
     
     Range range() const;
     

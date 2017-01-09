@@ -8,6 +8,9 @@
 
 #include "Actuator.hpp"
 
+// =============================================================================
+#pragma mark - Actuator : Implementation
+// =============================================================================
 Actuator::Action::Action(Pin::Identifier const pin,
                          Pin::Configuration const &configuration,
                          Scheduler::Time const time):

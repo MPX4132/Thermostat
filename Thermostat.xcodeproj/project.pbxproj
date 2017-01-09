@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		C346B72C1E23407900BB6FEF /* Thermometer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C346B72A1E23407900BB6FEF /* Thermometer.cpp */; };
-		C3FFC2481DD7B56E00C5B641 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC2471DD7B56E00C5B641 /* main.cpp */; };
 		C3FFC25C1DD7C15D00C5B641 /* Actuator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC25A1DD7C15D00C5B641 /* Actuator.cpp */; };
 		C3FFC25F1DD7C1B500C5B641 /* Pin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC25D1DD7C1B500C5B641 /* Pin.cpp */; };
 		C3FFC2621DD7C1EB00C5B641 /* Scheduler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC2601DD7C1EB00C5B641 /* Scheduler.cpp */; };
@@ -34,7 +33,6 @@
 		C346B72B1E23407900BB6FEF /* Thermometer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Thermometer.hpp; sourceTree = "<group>"; };
 		C38D32B01E236AAF00E5B10B /* Thermostat.ino */ = {isa = PBXFileReference; lastKnownFileType = text; path = Thermostat.ino; sourceTree = "<group>"; };
 		C3FFC2441DD7B56E00C5B641 /* Thermostat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Thermostat; sourceTree = BUILT_PRODUCTS_DIR; };
-		C3FFC2471DD7B56E00C5B641 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		C3FFC25A1DD7C15D00C5B641 /* Actuator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Actuator.cpp; sourceTree = "<group>"; };
 		C3FFC25B1DD7C15D00C5B641 /* Actuator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Actuator.hpp; sourceTree = "<group>"; };
 		C3FFC25D1DD7C1B500C5B641 /* Pin.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Pin.cpp; sourceTree = "<group>"; };
@@ -83,19 +81,18 @@
 			children = (
 				C3FFC26C1DD7C2E800C5B641 /* README.md */,
 				C3FFC26D1DD7C2E800C5B641 /* LICENSE */,
-				C3FFC2471DD7B56E00C5B641 /* main.cpp */,
-				C3FFC25A1DD7C15D00C5B641 /* Actuator.cpp */,
-				C3FFC25B1DD7C15D00C5B641 /* Actuator.hpp */,
 				C3FFC25D1DD7C1B500C5B641 /* Pin.cpp */,
 				C3FFC25E1DD7C1B500C5B641 /* Pin.hpp */,
-				C3FFC2601DD7C1EB00C5B641 /* Scheduler.cpp */,
-				C3FFC2611DD7C1EB00C5B641 /* Scheduler.hpp */,
+				C3FFC25A1DD7C15D00C5B641 /* Actuator.cpp */,
+				C3FFC25B1DD7C15D00C5B641 /* Actuator.hpp */,
 				C3FFC2631DD7C21D00C5B641 /* Sensor.cpp */,
 				C3FFC2641DD7C21D00C5B641 /* Sensor.hpp */,
 				C3FFC2661DD7C24900C5B641 /* Temperature.cpp */,
 				C3FFC2671DD7C24900C5B641 /* Temperature.hpp */,
 				C346B72A1E23407900BB6FEF /* Thermometer.cpp */,
 				C346B72B1E23407900BB6FEF /* Thermometer.hpp */,
+				C3FFC2601DD7C1EB00C5B641 /* Scheduler.cpp */,
+				C3FFC2611DD7C1EB00C5B641 /* Scheduler.hpp */,
 				C3FFC2691DD7C27000C5B641 /* Thermostat.cpp */,
 				C3FFC26A1DD7C27000C5B641 /* Thermostat.hpp */,
 				C38D32B01E236AAF00E5B10B /* Thermostat.ino */,
@@ -167,7 +164,6 @@
 				C346B72C1E23407900BB6FEF /* Thermometer.cpp in Sources */,
 				C3FFC2651DD7C21D00C5B641 /* Sensor.cpp in Sources */,
 				C3FFC25C1DD7C15D00C5B641 /* Actuator.cpp in Sources */,
-				C3FFC2481DD7B56E00C5B641 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -9,13 +9,14 @@
 #include "Thermometer.hpp"
 
 // =============================================================================
-#pragma mark - Scheduler : Implementation
+#pragma mark - Thermometer : Implementation
 // =============================================================================
-/*Temperature<float> Thermometer::temperature() const
+Temperature<float> Thermometer::temperature()
 {
     // Change temperature class to store values as kelvin (neutral/scientific).
+    return 0;
 }
-*/
+
 
 Thermometer::Range Thermometer::range() const
 {

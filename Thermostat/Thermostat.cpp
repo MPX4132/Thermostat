@@ -21,14 +21,17 @@ void Thermostat::setMode(const Thermostat::Mode mode)
     _mode = mode;
 }
 
-Temperature<float> Thermostat::temperature() const
+Temperature<float> Thermostat::temperature()
 {
-#warning Idk what the hell I'm adding here, whoops, guess I'm tired.
-    Temperature<float> averageTemperature = std::accumulate(this->thermometers.begin(),
-                                                            this->thermometers.end(),
-                                                            0.0f); // cast as float
-    if (this->thermometers.size()) averageTemperature /= this->thermometers.size();
-    return averageTemperature;
+    Temperature<float> temperature = 0;
+    
+    for (Thermometer &thermometer : this->thermometers)
+    {
+        temperature += thermometer.temperature();
+    }
+    
+    if (this->thermometers.size()) temperature /= this->thermometers.size();
+    return temperature;
 }
 
 Temperature<float> Thermostat::targetTemperature() const

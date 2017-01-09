@@ -24,7 +24,7 @@ public:
     // Range denotes the thermometer's range as a tuple, [Minimum, Maximum].
     typedef std::pair<Temperature<float>, Temperature<float>> Range;
     
-    virtual Temperature<float> temperature() const = 0;
+    virtual Temperature<float> temperature() = 0;
     
     Range range() const;
     

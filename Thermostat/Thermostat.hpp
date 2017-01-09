@@ -10,7 +10,6 @@
 #define Thermostat_hpp
 
 #include <vector>
-#include <numeric>
 #include "Thermometer.hpp"
 #include "Temperature.hpp"
 #include "Scheduler.hpp"
@@ -25,6 +24,8 @@ public:
     // ================================================================
 #pragma mark - Thermostat Types
     // ================================================================
+    typedef std::vector<Thermometer> Thermometers;
+    
     enum Mode
     {
         Off,
@@ -38,8 +39,6 @@ public:
         TemperatureUnit,	// Control based on temperature
         HeatIndexUnit		// Control based on heat index
     };
-    
-    typedef std::vector<Thermometer> Thermometers;
     
     
     // ================================================================
@@ -55,7 +54,7 @@ public:
     void setMode(const Mode mode = Off);
     
     // This method returns the average temperature of the thermometers.
-    virtual Temperature<float> temperature() const;
+    virtual Temperature<float> temperature();
     
     virtual Temperature<float> targetTemperature() const;
     virtual void setTargetTemperature(Temperature<float> const targetTemperature);

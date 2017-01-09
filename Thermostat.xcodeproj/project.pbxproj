@@ -7,7 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C346B72C1E23407900BB6FEF /* Thermometer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C346B72A1E23407900BB6FEF /* Thermometer.cpp */; };
 		C3FFC2481DD7B56E00C5B641 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC2471DD7B56E00C5B641 /* main.cpp */; };
+		C3FFC25C1DD7C15D00C5B641 /* Actuator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC25A1DD7C15D00C5B641 /* Actuator.cpp */; };
+		C3FFC25F1DD7C1B500C5B641 /* Pin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC25D1DD7C1B500C5B641 /* Pin.cpp */; };
+		C3FFC2621DD7C1EB00C5B641 /* Scheduler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC2601DD7C1EB00C5B641 /* Scheduler.cpp */; };
+		C3FFC2651DD7C21D00C5B641 /* Sensor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC2631DD7C21D00C5B641 /* Sensor.cpp */; };
+		C3FFC2681DD7C24900C5B641 /* Temperature.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC2661DD7C24900C5B641 /* Temperature.cpp */; };
+		C3FFC26B1DD7C27000C5B641 /* Thermostat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3FFC2691DD7C27000C5B641 /* Thermostat.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -23,8 +30,24 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C346B72A1E23407900BB6FEF /* Thermometer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Thermometer.cpp; sourceTree = "<group>"; };
+		C346B72B1E23407900BB6FEF /* Thermometer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Thermometer.hpp; sourceTree = "<group>"; };
 		C3FFC2441DD7B56E00C5B641 /* Thermostat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Thermostat; sourceTree = BUILT_PRODUCTS_DIR; };
 		C3FFC2471DD7B56E00C5B641 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		C3FFC25A1DD7C15D00C5B641 /* Actuator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Actuator.cpp; sourceTree = "<group>"; };
+		C3FFC25B1DD7C15D00C5B641 /* Actuator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Actuator.hpp; sourceTree = "<group>"; };
+		C3FFC25D1DD7C1B500C5B641 /* Pin.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Pin.cpp; sourceTree = "<group>"; };
+		C3FFC25E1DD7C1B500C5B641 /* Pin.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Pin.hpp; sourceTree = "<group>"; };
+		C3FFC2601DD7C1EB00C5B641 /* Scheduler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Scheduler.cpp; sourceTree = "<group>"; };
+		C3FFC2611DD7C1EB00C5B641 /* Scheduler.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Scheduler.hpp; sourceTree = "<group>"; };
+		C3FFC2631DD7C21D00C5B641 /* Sensor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Sensor.cpp; sourceTree = "<group>"; };
+		C3FFC2641DD7C21D00C5B641 /* Sensor.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Sensor.hpp; sourceTree = "<group>"; };
+		C3FFC2661DD7C24900C5B641 /* Temperature.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Temperature.cpp; sourceTree = "<group>"; };
+		C3FFC2671DD7C24900C5B641 /* Temperature.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Temperature.hpp; sourceTree = "<group>"; };
+		C3FFC2691DD7C27000C5B641 /* Thermostat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Thermostat.cpp; sourceTree = "<group>"; };
+		C3FFC26A1DD7C27000C5B641 /* Thermostat.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Thermostat.hpp; sourceTree = "<group>"; };
+		C3FFC26C1DD7C2E800C5B641 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		C3FFC26D1DD7C2E800C5B641 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +80,23 @@
 		C3FFC2461DD7B56E00C5B641 /* Thermostat */ = {
 			isa = PBXGroup;
 			children = (
+				C3FFC26C1DD7C2E800C5B641 /* README.md */,
+				C3FFC26D1DD7C2E800C5B641 /* LICENSE */,
 				C3FFC2471DD7B56E00C5B641 /* main.cpp */,
+				C3FFC25A1DD7C15D00C5B641 /* Actuator.cpp */,
+				C3FFC25B1DD7C15D00C5B641 /* Actuator.hpp */,
+				C3FFC25D1DD7C1B500C5B641 /* Pin.cpp */,
+				C3FFC25E1DD7C1B500C5B641 /* Pin.hpp */,
+				C3FFC2601DD7C1EB00C5B641 /* Scheduler.cpp */,
+				C3FFC2611DD7C1EB00C5B641 /* Scheduler.hpp */,
+				C3FFC2631DD7C21D00C5B641 /* Sensor.cpp */,
+				C3FFC2641DD7C21D00C5B641 /* Sensor.hpp */,
+				C3FFC2661DD7C24900C5B641 /* Temperature.cpp */,
+				C3FFC2671DD7C24900C5B641 /* Temperature.hpp */,
+				C346B72A1E23407900BB6FEF /* Thermometer.cpp */,
+				C346B72B1E23407900BB6FEF /* Thermometer.hpp */,
+				C3FFC2691DD7C27000C5B641 /* Thermostat.cpp */,
+				C3FFC26A1DD7C27000C5B641 /* Thermostat.hpp */,
 			);
 			path = Thermostat;
 			sourceTree = "<group>";
@@ -119,6 +158,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C3FFC2681DD7C24900C5B641 /* Temperature.cpp in Sources */,
+				C3FFC26B1DD7C27000C5B641 /* Thermostat.cpp in Sources */,
+				C3FFC25F1DD7C1B500C5B641 /* Pin.cpp in Sources */,
+				C3FFC2621DD7C1EB00C5B641 /* Scheduler.cpp in Sources */,
+				C346B72C1E23407900BB6FEF /* Thermometer.cpp in Sources */,
+				C3FFC2651DD7C21D00C5B641 /* Sensor.cpp in Sources */,
+				C3FFC25C1DD7C15D00C5B641 /* Actuator.cpp in Sources */,
 				C3FFC2481DD7B56E00C5B641 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -246,6 +292,7 @@
 				C3FFC24D1DD7B56E00C5B641 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

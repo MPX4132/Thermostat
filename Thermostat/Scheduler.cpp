@@ -166,7 +166,13 @@ void Scheduler::_update(Scheduler::Time const time)
         if (this->delegate) this->delegate->schedulerStartingEvent(this, event);
         event->execute(time);
         
-        Scheduler::Daemon * daemon = dynamic_cast<Scheduler::Daemon*>(event);
+        // Can't use the line below, must use old-ass C style of casting.
+        // RTTI isn't enabled and if I do enable it the damned sketch doesn't fit
+        // on the fucking ESP module... I've wasted enough time looking for how
+        // to enable it on one file only, not only that but I fucking hate the
+        // Arduino IDE. Clumsy as fuck, which is why I'm using XCode...
+        //Scheduler::Daemon * daemon = dynamic_cast<Scheduler::Daemon*>(event);
+        Scheduler::Daemon * daemon = (Scheduler::Daemon*) event;
         
         // Only retain daemons iff they haven't yet finished.
         if (daemon && !daemon->finished()) continue;

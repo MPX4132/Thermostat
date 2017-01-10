@@ -79,7 +79,7 @@ void Pin::setConfiguration(Pin::Configuration const &configuration)
 bool Pin::_Reserve(Pin const * const pin)
 {
     if (!pin || Pin::_Reserved.count(pin->identity()) > 0) return false;
-    //Pin::_Reserved[pin->identity()] = pin;
+    Pin::_Reserved[pin->identity()] = pin;
     return true;
 }
 

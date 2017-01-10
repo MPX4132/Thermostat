@@ -29,3 +29,4 @@ public:
 };
 
 #endif /* Sensor_hpp */
+

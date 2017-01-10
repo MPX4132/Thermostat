@@ -10,6 +10,7 @@
 #define Pin_hpp
 
 #include <map>
+#include <Arduino.h>
 
 // =============================================================================
 // Pin : This class abstracts the I/O pins found on the development board. The
@@ -39,11 +40,11 @@ public:
     bool ready() const;
     
     Mode mode() const;
-    void setMode(Mode const mode);
+    bool setMode(Mode const mode);
     
     
     Value state() const;
-    void setState(Value const state);
+    bool setState(Value const state);
     
     Configuration configuration() const;
     void setConfiguration(Configuration const &configuration);
@@ -63,3 +64,4 @@ protected:
 };
 
 #endif /* Pin_hpp */
+

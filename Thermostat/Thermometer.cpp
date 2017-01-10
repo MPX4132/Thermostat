@@ -33,3 +33,4 @@ Thermometer::~Thermometer()
 {
     
 }
+

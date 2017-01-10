@@ -172,7 +172,7 @@ void Scheduler::_update(Scheduler::Time const time)
         // to enable it on one file only, not only that but I fucking hate the
         // Arduino IDE. Clumsy as fuck, which is why I'm using XCode...
         //Scheduler::Daemon * daemon = dynamic_cast<Scheduler::Daemon*>(event);
-        Scheduler::Daemon * daemon = (Scheduler::Daemon*) event;
+        Scheduler::Daemon * daemon = (Scheduler::Daemon*) event; // BY FORCE
         
         // Only retain daemons iff they haven't yet finished.
         if (daemon && !daemon->finished()) continue;
@@ -212,3 +212,4 @@ Scheduler::~Scheduler()
 {
     Scheduler::_Register.erase(this);
 }
+

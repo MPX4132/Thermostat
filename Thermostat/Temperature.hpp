@@ -182,3 +182,4 @@ protected:
 };
 
 #endif /* Temperature_hpp */
+

@@ -87,3 +87,4 @@ protected:
 };
 
 #endif /* Thermostat_hpp */
+

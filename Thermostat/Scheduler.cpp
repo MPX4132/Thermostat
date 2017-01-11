@@ -170,12 +170,19 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
     Scheduler::_RegisterEventOfScheduler(event, this); // Associate event to this
     this->_events.insert(event);
     
+    Serial.print("[Scheduler] Event count is now ");
+    Serial.println(this->_events.size());
+    
     if (this->delegate) this->delegate->schedulerEnqueuedEvent(this, event);
     return true;
 }
 
 bool Scheduler::dequeue(Scheduler::Event * const event)
 {
+    Serial.print("[Scheduler] Dequeueing event <");
+    Serial.print((unsigned long)event, HEX);
+    Serial.println(">");
+    
     //Serial.println("[Scheduler] Will search for target...");
     auto target = std::find(this->_events.begin(), this->_events.end(), event);
     //Serial.println("[Scheduler] Found something...");
@@ -185,13 +192,24 @@ bool Scheduler::dequeue(Scheduler::Event * const event)
     //Serial.println("[Scheduler] Target deleted successfully!");
     if (this->delegate) this->delegate->schedulerDequeuedEvent(this, event);
     //Serial.println("[Scheduler] Notifying delegate!");
+    
+    Serial.print("[Scheduler] Event count is now ");
+    Serial.println(this->_events.size());
+    
     return true;
 }
 
 void Scheduler::UpdateAll(Scheduler::Time const time)
 {
-    for (Scheduler * const scheduler : Scheduler::_Register) {
+    for (Scheduler * const scheduler : Scheduler::_Register)
+    {
+        Serial.print("[Scheduler Master] Running scheduler <");
+        Serial.print((unsigned long) scheduler, HEX);
+        Serial.println(">");
         scheduler->_update(time);
+        Serial.print("[Scheduler Master] Stopping scheduler <");
+        Serial.print((unsigned long) scheduler, HEX);
+        Serial.println(">");
     }
 }
 
@@ -202,14 +220,24 @@ void Scheduler::_update(Scheduler::Time const time)
     for (std::set<Scheduler::Event *, Scheduler::Event::PtrCompare>::iterator eventi = this->_events.begin(); eventi != this->_events.end(); eventi++) {
         Event * const event = *eventi;
         
-        if (event->executeTime() > time) break;
+        //if (event->executeTime() > time) break;
+        if (event->executeTime() > time)
+        {
+            Serial.print("[Scheduler] Event <");
+            Serial.print((unsigned long) event, HEX);
+            Serial.print("> will execute @ ");
+            Serial.print(event->executeTime());
+            Serial.print(", it's currently ");
+            Serial.println(time);
+            continue;
+        }
         
         if (this->delegate) this->delegate->schedulerStartingEvent(this, event);
         
         Serial.println("");
         Serial.println("==========");
         Serial.print("[Scheduler] Event <");
-        Serial.print((unsigned long)(event), HEX);
+        Serial.print((unsigned long)event, HEX);
         Serial.print("> starting @ ");
         Serial.println(time);
         
@@ -243,7 +271,7 @@ void Scheduler::_update(Scheduler::Time const time)
         if (!event->finished()) continue;
         
 #warning Removing iterator here might corrupt the iterative for-loop.
-        this->_events.erase(eventi);
+        //this->_events.erase(eventi);
         //completed.push_back(eventi);
         
         if (this->delegate) this->delegate->schedulerCompletedEvent(this, event);
@@ -259,11 +287,19 @@ void Scheduler::_RegisterEventOfScheduler(Scheduler::Event * event,
                                           Scheduler * scheduler)
 {
     _EventSchedulerRegister[event] = scheduler;
+    Serial.print("[Scheduler Master] Event <");
+    Serial.print((unsigned long) event, HEX);
+    Serial.print("> registered to scheduler <");
+    Serial.print((unsigned long) scheduler, HEX);
+    Serial.println(">");
 }
 
 void Scheduler::_UnregisterEvent(Scheduler::Event * event)
 {
     _EventSchedulerRegister.erase(event);
+    Serial.print("[Scheduler Master] Event <");
+    Serial.print((unsigned long) event, HEX);
+    Serial.println("> unregistered.");
 }
 
 void Scheduler::_RecalculateEventPriority(Scheduler::Event * event)

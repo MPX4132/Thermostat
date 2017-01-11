@@ -36,7 +36,7 @@ void Actuator::actuate(Actuator::Actions const &actions)
         Actuator::Event * actuatorEvent = new Actuator::Event(_pins[action.pin],
                                                               action.configuration,
                                                               action.time);
-        this->_scheduler.enqueue(static_cast<Scheduler::Event *>(actuatorEvent));
+        this->_scheduler.enqueue(actuatorEvent);
     }
 }
 

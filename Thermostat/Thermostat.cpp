@@ -92,7 +92,7 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     // Check Actuator instance Pins are ready for operations.
     if (!this->ready()) return 2; // Pins not ready or unavailable.
 
-    Serial.print("Thermostat daemon starting update, mode: ");
+    Serial.print("[Thermostat] Daemon running update, mode: ");
     switch (this->mode())
     {
         case Off: Serial.println("Off"); this->_standby();
@@ -120,7 +120,7 @@ int Thermostat::execute(Scheduler::Time const updateTime)
             break;
     }
     this->_executeTimeUpdate(updateTime);
-    Serial.println("Thermostat daemon finished update.");
+    Serial.println("[Thermostat] Daemon finished.");
     return 0;
 }
 
@@ -136,7 +136,6 @@ Actuator(pins),
 Scheduler::Event(0, executeTimeInterval),
 thermometers(thermometers),
 _measurmentType(Thermostat::Measurement::TemperatureUnit),
-_scheduler(),
 _mode(Thermostat::Mode::Off)
 {
     // targetTemp, targetTempThresh & _scheduler are fine auto-initialized.

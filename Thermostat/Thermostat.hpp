@@ -75,7 +75,6 @@ protected:
     Temperature<float> _targetTemperature;
     Temperature<float> _targetTemperatureThreshold;
     Measurement _measurmentType;
-    Scheduler _scheduler;
     Mode _mode;
     
     void _standby();

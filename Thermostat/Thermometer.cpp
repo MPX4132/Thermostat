@@ -9,7 +9,7 @@
 #include "Thermometer.hpp"
 
 // =============================================================================
-#pragma mark - Thermometer : Implementation
+// Thermometer : Implementation
 // =============================================================================
 Temperature<float> Thermometer::temperature()
 {

@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <typeinfo>
 #include <Arduino.h>
 
 // =============================================================================

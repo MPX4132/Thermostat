@@ -24,7 +24,7 @@ class Thermostat : protected Actuator, protected Scheduler::Daemon
 {
 public:
     // ================================================================
-#pragma mark - Thermostat Types
+    // Thermostat Types
     // ================================================================
     typedef std::vector<Thermometer> Thermometers;
     
@@ -44,13 +44,13 @@ public:
     
     
     // ================================================================
-#pragma mark - Thermostat Members
+    // Thermostat Members
     // ================================================================
     Thermometers thermometers;
     
     
     // ================================================================
-#pragma mark - Thermostat Methods
+    // Thermostat Methods
     // ================================================================
     virtual Mode mode() const;
     void setMode(const Mode mode = Off);
@@ -82,7 +82,7 @@ protected:
     void _setHeater(bool const heat);
     
     // ================================================================
-#pragma mark - Scheduler::Event Methods
+    // Scheduler::Event Methods
     // ================================================================
     int execute(Scheduler::Time const updateTime);
 };

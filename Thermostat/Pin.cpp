@@ -9,13 +9,13 @@
 #include "Pin.hpp"
 
 // =============================================================================
-#pragma mark - Pin : Static Variables Declaration
+// Pin : Static Variables Declaration
 // =============================================================================
 std::map<Pin::Identifier, Pin const *> Pin::_Reserved;
 
 
 // =============================================================================
-#pragma mark - Pin : Implementation
+// Pin : Implementation
 // =============================================================================
 Pin::Identifier Pin::identity() const
 {
@@ -35,7 +35,7 @@ Pin::Mode Pin::mode() const
 bool Pin::setMode(Pin::Mode const mode)
 {
     if (this->mode() == Pin::Mode::Invalid) return false;
-    return this->_mode = mode;
+    return (this->_mode = mode);
 }
 
 Pin::Value Pin::state() const
@@ -90,8 +90,8 @@ bool Pin::_Release(Pin const * const pin)
 
 Pin::Pin(Pin::Identifier const identifier):
 _identity(identifier),
-_mode(Pin::Mode::Auto),
-_value(0)
+_value(0),
+_mode(Pin::Mode::Auto)
 {
     this->setMode(Pin::_Reserve(this)? Pin::Mode::Auto : Pin::Mode::Invalid);
 }

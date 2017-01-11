@@ -9,14 +9,14 @@
 #include "Actuator.hpp"
 
 // =============================================================================
-#pragma mark - Actuator : Implementation
+// Actuator : Implementation
 // =============================================================================
 Actuator::Action::Action(Pin::Identifier const pin,
                          Pin::Configuration const &configuration,
                          Scheduler::Time const time):
-time(time),
 pin(pin),
-configuration(configuration)
+configuration(configuration),
+time(time)
 {
     
 }
@@ -49,9 +49,9 @@ int Actuator::Event::execute(Scheduler::Time const time)
 Actuator::Event::Event(Pin * const pin,
                        Pin::Configuration const &configuration,
                        Scheduler::Time const time):
+Scheduler::Event(time),
 _pin(pin),
-_configuration(configuration),
-Scheduler::Event(time)
+_configuration(configuration)
 {
     
 }

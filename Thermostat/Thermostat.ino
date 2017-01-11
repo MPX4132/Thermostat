@@ -1,7 +1,7 @@
 // This HVAC control system is designed to run on low resource systems.
 
 
-#include "ESP8266WiFi.h"
+//#include "ESP8266WiFi.h"
 #include "Thermostat.hpp"
 #include "Scheduler.hpp"
 

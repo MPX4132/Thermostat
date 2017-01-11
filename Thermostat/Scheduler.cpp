@@ -9,14 +9,14 @@
 #include "Scheduler.hpp"
 
 // =============================================================================
-#pragma mark - Scheduler : Static Variables Declaration
+// Scheduler : Static Variables Declaration
 // =============================================================================
 std::set<Scheduler *> Scheduler::_Register;
 std::map<Scheduler::Event *, Scheduler *> Scheduler::_EventSchedulerRegister;
 
 
 // =============================================================================
-#pragma mark - Scheduler::Event : Implementation
+// Scheduler::Event : Implementation
 // =============================================================================
 bool Scheduler::Event::PtrCompare::operator()(Scheduler::Event const * const eventL,
                                               Scheduler::Event const * const eventR)
@@ -64,7 +64,7 @@ Scheduler::Event::~Event()
 
 
 // =============================================================================
-#pragma mark - Scheduler::Daemon : Implementation
+// Scheduler::Daemon : Implementation
 // =============================================================================
 Scheduler::Time Scheduler::Daemon::executeTimeInterval() const
 {
@@ -97,7 +97,7 @@ _executeTimeInterval(executeTimeInterval)
 
 
 // =============================================================================
-#pragma mark - Scheduler::Delegate : Implementation
+// Scheduler::Delegate : Implementation
 // =============================================================================
 void Scheduler::Delegate::schedulerStartingEvent(Scheduler * const scheduler,
                                                  Scheduler::Event * const event)
@@ -130,7 +130,7 @@ Scheduler::Delegate::~Delegate()
 
 
 // =============================================================================
-#pragma mark - Scheduler : Implementation
+// Scheduler : Implementation
 // =============================================================================
 bool Scheduler::enqueue(Scheduler::Event * const event)
 {
@@ -193,7 +193,8 @@ void Scheduler::_update(Scheduler::Time const time)
         // on the fucking ESP module... I've wasted enough time looking for how
         // to enable it on a signel file.
         //Scheduler::Daemon * daemon = dynamic_cast<Scheduler::Daemon*>(event);
-        #warning This is casting everything as a daemon, crashing when finished is invoked!
+        //Scheduler::Daemon * daemon = nullptr;
+        //if (typeid(event) == typeid(Scheduler::Daemon *)) daemon = (Scheduler::Daemon*) event;
         //Scheduler::Daemon * daemon = (Scheduler::Daemon*) event; // BY FORCE
         
         // Only retain daemons iff they haven't yet finished.

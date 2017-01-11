@@ -9,7 +9,7 @@
 #include "Thermostat.hpp"
 
 // =============================================================================
-#pragma mark - Thermostat : Implementation
+// Thermostat : Implementation
 // =============================================================================
 Thermostat::Mode Thermostat::mode() const
 {
@@ -126,16 +126,16 @@ int Thermostat::execute(Scheduler::Time const updateTime)
 
 
 // =============================================================================
-#pragma mark - Thermostat : Constructors & Destructor
+// Thermostat : Constructors & Destructor
 // =============================================================================
 Thermostat::Thermostat(Actuator::Pins const &pins,
                        Thermometers &thermometers,
                        Scheduler::Time const executeTimeInterval):
 Actuator(pins),
-Scheduler::Daemon(0, executeTimeInterval),
 thermometers(thermometers),
-_mode(Thermostat::Mode::Off),
-_measurmentType(Thermostat::Measurement::TemperatureUnit)
+_measurmentType(Thermostat::Measurement::TemperatureUnit),
+Scheduler::Daemon(0, executeTimeInterval),
+_mode(Thermostat::Mode::Off)
 {
     // targetTemp, targetTempThresh & _scheduler are fine auto-initialized.
     this->_scheduler.enqueue(static_cast<Scheduler::Event * const>(this));

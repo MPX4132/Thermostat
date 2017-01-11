@@ -9,7 +9,7 @@
 #include "Sensor.hpp"
 
 // =============================================================================
-#pragma mark - Sensor : Implementation
+// Sensor : Implementation
 // =============================================================================
 Sensor::Data Sensor::sense() {
     return static_cast<Sensor::Data>(0);

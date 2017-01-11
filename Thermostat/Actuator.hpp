@@ -12,6 +12,7 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <Arduino.h>
 #include "Pin.hpp"
 #include "Scheduler.hpp"
 
@@ -67,6 +68,7 @@ protected:
     
     std::map<Pin::Identifier, Pin *> _pins;
     Scheduler _scheduler;
+    Pins const _pinout;
     
     virtual void schedulerCompletedEvent(Scheduler * const scheduler,
                                  Scheduler::Event * const event);

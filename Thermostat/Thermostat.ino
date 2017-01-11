@@ -3,6 +3,7 @@
 
 #include "ESP8266WiFi.h"
 #include "Thermostat.hpp"
+#include "Scheduler.hpp"
 
 
 //#warning Remember to remove your access point data before commiting!
@@ -21,14 +22,16 @@ const char *WIFI_PASS = "PASSHERE";
 
 void setup() 
 {
-	Serial.begin(115200);
+    Serial.begin(115200);
+    Serial.println("Setting up...");
+   
 	//WiFi.setOutputPower(0); // Temporary workaround for ESP-1 to ESP-6.
 	//WiFi.begin(WIFI_SSID, WIFI_PASS);
 }
 
 void loop() 
 {
-    Thermostat::Thermometers thermometers = {Thermometer({3,4})};
+    Thermostat::Thermometers thermometers = {Thermometer({14})};
     Thermostat thermostat({2,12,13}, thermometers);
 
     /*
@@ -47,9 +50,14 @@ void loop()
     */
     
     for (;;) 
-    {
-        Serial.print("Timer: ");
-        Serial.println(millis());
-        delay(1000);
+    {        
+        // Scheduler at microsecond resolution.
+        Scheduler::Time const now = micros();
+        Scheduler::UpdateAll(now);
+        
+        Serial.print("Update at: ");
+        Serial.println(now);
+        
+        wdt_reset(); // Notify watchdog microcontroller hasn't crashed.
     }
 }

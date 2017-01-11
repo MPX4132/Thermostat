@@ -134,6 +134,9 @@ Scheduler::Delegate::~Delegate()
 // =============================================================================
 bool Scheduler::enqueue(Scheduler::Event * const event)
 {
+    Serial.print("[Scheduler] Enqueueing event <");
+    Serial.print((unsigned int)event, HEX);
+    Serial.println(">");
     if (!event) return false;
     this->_events.insert(event);
     if (this->delegate) this->delegate->schedulerEnqueuedEvent(this, event);
@@ -151,36 +154,62 @@ bool Scheduler::dequeue(Scheduler::Event * const event)
 
 void Scheduler::UpdateAll(Scheduler::Time const time)
 {
-    for (Scheduler *scheduler : Scheduler::_Register) {
+    for (Scheduler * const scheduler : Scheduler::_Register) {
         scheduler->_update(time);
     }
 }
 
 void Scheduler::_update(Scheduler::Time const time)
 {
-    for (auto eventi = this->_events.begin(); eventi != this->_events.end(); eventi++) {
+    //std::set<Event *, Event::PtrCompare> _events;
+    //std::vector<std::set<Scheduler::Event *, Scheduler::Event::PtrCompare>::iterator> completed;
+    for (std::set<Scheduler::Event *, Scheduler::Event::PtrCompare>::iterator eventi = this->_events.begin(); eventi != this->_events.end(); eventi++) {
         Event * const event = *eventi;
         
         if (event->executeTime() > time) break;
         
         if (this->delegate) this->delegate->schedulerStartingEvent(this, event);
-        event->execute(time);
+
+        Serial.print("[Scheduler] Executing event <");
+        Serial.print((unsigned int)(event), HEX);
+        Serial.print("> @ ");
+        Serial.println(time);
+        
+        int const errorCode = event->execute(time);
+
+        if (errorCode)
+        {
+            Serial.print("Event returned error code ");
+            Serial.println(errorCode);
+        }
+        
+        Serial.print("[Scheduler] Executed event <");
+        Serial.print((unsigned int)(event), HEX);
+        Serial.print("> @ ");
+        Serial.println(time);
         
         // Can't use the line below, must use old-ass C style of casting.
         // RTTI isn't enabled and if I do enable it the damned sketch doesn't fit
         // on the fucking ESP module... I've wasted enough time looking for how
-        // to enable it on one file only, not only that but I fucking hate the
-        // Arduino IDE. Clumsy as fuck, which is why I'm using XCode...
+        // to enable it on a signel file.
         //Scheduler::Daemon * daemon = dynamic_cast<Scheduler::Daemon*>(event);
-        Scheduler::Daemon * daemon = (Scheduler::Daemon*) event; // BY FORCE
+        #warning This is casting everything as a daemon, crashing when finished is invoked!
+        //Scheduler::Daemon * daemon = (Scheduler::Daemon*) event; // BY FORCE
         
         // Only retain daemons iff they haven't yet finished.
-        if (daemon && !daemon->finished()) continue;
-        
+        //if (daemon && !daemon->finished()) continue;
+
+        #warning Removing iterator here might corrupt the iterative for-loop.
         this->_events.erase(eventi);
+        //completed.push_back(eventi);
         
         if (this->delegate) this->delegate->schedulerCompletedEvent(this, event);
     }
+
+    /*for (std::vector<std::set<Scheduler::Event *, Scheduler::Event::PtrCompare>::iterator>::iterator eventi : completed) 
+    {
+        this->_events.erase(eventi);
+    }*/
 }
 
 void Scheduler::_RegisterEventOfScheduler(Scheduler::Event * event,

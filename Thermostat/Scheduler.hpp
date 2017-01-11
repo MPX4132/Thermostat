@@ -11,7 +11,9 @@
 
 #include <set>
 #include <map>
+#include <vector>
 #include <algorithm>
+#include <Arduino.h>
 
 // =============================================================================
 // Scheduler : This class is responsible for scheduling and executing jobs at

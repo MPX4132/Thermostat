@@ -67,7 +67,8 @@ void Actuator::schedulerCompletedEvent(Scheduler * const scheduler,
     delete event; // Delete the dynamically created actuator event object
 }
 
-Actuator::Actuator(Actuator::Pins const &pins)
+Actuator::Actuator(Actuator::Pins const &pins):
+_pinout(pins)
 {
     this->_scheduler.delegate = static_cast<Scheduler::Delegate *>(this);
     

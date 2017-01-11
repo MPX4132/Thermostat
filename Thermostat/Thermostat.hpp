@@ -14,6 +14,7 @@
 #include "Thermometer.hpp"
 #include "Temperature.hpp"
 #include "Scheduler.hpp"
+#include <Arduino.h>
 
 // =============================================================================
 // Thermostat : This class abstracts the functionality of an HVAC control system
@@ -70,11 +71,11 @@ public:
     virtual ~Thermostat();
     
 protected:
-    Mode _mode;
     Temperature<float> _targetTemperature;
     Temperature<float> _targetTemperatureThreshold;
     Measurement _measurmentType;
     Scheduler _scheduler;
+    Mode _mode;
     
     void _standby();
     void _setCooler(bool const cool);

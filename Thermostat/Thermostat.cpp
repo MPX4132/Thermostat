@@ -57,13 +57,15 @@ void Thermostat::setMeasurementType(Thermostat::Measurement const measurementTyp
 
 void Thermostat::_standby()
 {
-    Serial.println("Standby triggered.");
+    Serial.println("[Thermostat] Standby actions start.");
 
     this->actuate({ // Toggle all pins to 0, or release all relays, immediately.
         {this->_pinout[0], {Pin::Mode::Output, 0}, 0},
         {this->_pinout[1], {Pin::Mode::Output, 0}, 0},
         {this->_pinout[2], {Pin::Mode::Output, 0}, 0}
     });
+    
+    Serial.println("[Thermostat] Standby actions end.");
 }
 
 void Thermostat::_setCooler(bool const cool)

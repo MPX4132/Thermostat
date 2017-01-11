@@ -24,16 +24,16 @@ const char *WIFI_PASS = "PASSHERE";
 /*class EventT : public Scheduler::Event
 {
 public:
-int execute(Scheduler::Time const time) {
-return 0;
-}
+    int execute(Scheduler::Time const time) {
+    return 0;
+    }
 
-EventT(Scheduler::Time const executeTime, Scheduler::Time const executeTimeInterval = 0):
-Event(executeTime, executeTimeInterval)
-{}
+    EventT(Scheduler::Time const executeTime, Scheduler::Time const executeTimeInterval = 0):
+    Event(executeTime, executeTimeInterval)
+    {}
 
-~EventT()
-{}
+    ~EventT()
+    {}
 };*/
 
 void setup() 
@@ -51,9 +51,9 @@ void loop()
     Thermostat thermostat({2,12,13}, thermometers);
 
     /*std::set<Scheduler::Event *, Scheduler::Event::PtrCompare> test;
-    EventT e1(1);
-    EventT e2(2);
-    EventT e3(3);
+    EventT e1(2);
+    EventT e2(3);
+    EventT e3(1);
 
     Serial.print("Before: ");
     Serial.println(test.size());
@@ -61,10 +61,10 @@ void loop()
     Serial.print("After inserting e1: ");
     Serial.println(test.size());
     test.insert(&e2);
-    Serial.print("After inserting e3: ");
+    Serial.print("After inserting e2: ");
     Serial.println(test.size());
     test.insert(&e3);
-    Serial.print("After inserting e2: ");
+    Serial.print("After inserting e3: ");
     Serial.println(test.size());*/
 
 

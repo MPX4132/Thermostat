@@ -9,7 +9,6 @@
 #ifndef Temperature_hpp
 #define Temperature_hpp
 
-#include <limits>
 
 // =============================================================================
 // Temperature : This class abstracts different types of temperatures and sets
@@ -103,7 +102,7 @@ public:
     
     NumericType value(const Scale scale = Internal) const
     {
-        return Convert(_value, Celsius, scale == Internal? this->scale():scale);
+        return Convert(this->_value, Celsius, (scale == Internal)? this->scale() : scale);
     }
     
     void setValue(const NumericType value)
@@ -159,13 +158,15 @@ public:
             default: break;
         } 
         
-        // If no match was found, return the highest possible value as an error.
-        return std::numeric_limits<NumericType>::max();
+        // If no match was found, return the value that was given.
+        return value;
     }
     
-    Temperature(const Temperature<NumericType>& temperature)
+    Temperature(const Temperature<NumericType>& temperature):
+    _value(temperature.value()),
+    _scale(temperature.scale())
     {
-        this->setValue(temperature);
+        
     }
     
     Temperature(const NumericType value = 72, const Scale scale = Fahrenheit):

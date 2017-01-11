@@ -106,10 +106,10 @@ int Thermostat::execute(Scheduler::Time const updateTime)
             
         case Auto: {
             Serial.println("Auto");
-            if (this->temperature() > this->targetTemperature() + this->_targetTemperatureThreshold) {
+            if (this->temperature() > (this->targetTemperature() + this->_targetTemperatureThreshold)) {
                 this->_setCooler(true);
             } else
-            if (this->temperature() < this->targetTemperature() - this->_targetTemperatureThreshold) {
+            if (this->temperature() < (this->targetTemperature() - this->_targetTemperatureThreshold)) {
                 this->_setHeater(true);
             } else {
                 this->_standby();

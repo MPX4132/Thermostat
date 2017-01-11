@@ -135,7 +135,7 @@ Scheduler::Delegate::~Delegate()
 bool Scheduler::enqueue(Scheduler::Event * const event)
 {
     Serial.print("[Scheduler] Enqueueing event <");
-    Serial.print((unsigned int)event, HEX);
+    Serial.print((unsigned long)event, HEX);
     Serial.println(">");
     if (!event) return false;
     this->_events.insert(event);
@@ -171,7 +171,7 @@ void Scheduler::_update(Scheduler::Time const time)
         if (this->delegate) this->delegate->schedulerStartingEvent(this, event);
 
         Serial.print("[Scheduler] Executing event <");
-        Serial.print((unsigned int)(event), HEX);
+        Serial.print((unsigned long)(event), HEX);
         Serial.print("> @ ");
         Serial.println(time);
         
@@ -184,7 +184,7 @@ void Scheduler::_update(Scheduler::Time const time)
         }
         
         Serial.print("[Scheduler] Executed event <");
-        Serial.print((unsigned int)(event), HEX);
+        Serial.print((unsigned long)(event), HEX);
         Serial.print("> @ ");
         Serial.println(time);
         

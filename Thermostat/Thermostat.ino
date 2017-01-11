@@ -55,7 +55,7 @@ void loop()
         Scheduler::Time const now = micros();
         Scheduler::UpdateAll(now);
         
-        Serial.print("Update at: ");
+        Serial.print("[Cylcle] Completed at: ");
         Serial.println(now);
         
         wdt_reset(); // Notify watchdog microcontroller hasn't crashed.

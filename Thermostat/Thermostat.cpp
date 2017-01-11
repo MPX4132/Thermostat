@@ -119,7 +119,7 @@ int Thermostat::execute(Scheduler::Time const updateTime)
         default: this->_standby(); // Fuck you too.
             break;
     }
-
+    this->_executeTimeUpdate(updateTime);
     Serial.println("Thermostat daemon finished update.");
     return 0;
 }
@@ -132,9 +132,11 @@ Thermostat::Thermostat(Actuator::Pins const &pins,
                        Thermometers &thermometers,
                        Scheduler::Time const executeTimeInterval):
 Actuator(pins),
+//Scheduler::Daemon(0, executeTimeInterval),
+Scheduler::Event(0, executeTimeInterval),
 thermometers(thermometers),
 _measurmentType(Thermostat::Measurement::TemperatureUnit),
-Scheduler::Daemon(0, executeTimeInterval),
+_scheduler(),
 _mode(Thermostat::Mode::Off)
 {
     // targetTemp, targetTempThresh & _scheduler are fine auto-initialized.

@@ -49,18 +49,29 @@ public:
         virtual Time executeTime() const;
         virtual void setExecuteTime(Time const executeTime);
         
-        Event(Time executeTime);
+        // Methods from Daemon
+        virtual Time executeTimeInterval() const;
+        virtual void setExecuteTimeInterval(Time const executeTimeInterval);
+        
+        virtual bool finished() const; // Daemon
+        
+        //Event(Time const executeTime); // Can't use, no RTTI.
+        // Constructor with Daemon integration (fucking hate it)!
+        Event(Time const executeTime, Time const executeTimeInterval = 0);
         virtual ~Event();
         
     protected:
         
         Time _executeTime;
+        Time _executeTimeInterval; // Daemon
+        
+        Time _executeTimeUpdate(Time const updateTime); // Daemon
     };
     
     // =========================================================================
     // Daemon: A schedulable class used to trigger repeating events.
     // =========================================================================
-    class Daemon : public Event {
+    /*class Daemon : public Event { // Can't use: no rtti, no runtime class info
     public:
         
         virtual Time executeTimeInterval() const;
@@ -74,7 +85,7 @@ public:
         Time _executeTimeInterval;
         
         Time _executeTimeUpdate(Time const updateTime);
-    };
+    };*/
     
     // =========================================================================
     // Delegate: A common interface used to interface with other classes.

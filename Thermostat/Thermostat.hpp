@@ -20,7 +20,8 @@
 // Thermostat : This class abstracts the functionality of an HVAC control system
 // and provides a simplistic interface for interacting with it.
 // =============================================================================
-class Thermostat : protected Actuator, protected Scheduler::Daemon
+//class Thermostat : protected Actuator, protected Scheduler::Daemon // No RTTI!
+class Thermostat : protected Actuator, protected Scheduler::Event
 {
 public:
     // ================================================================
@@ -67,7 +68,7 @@ public:
     // The pin order is as follows by default: {FAN call, COOL call, HEAT call}
     Thermostat(Actuator::Pins const &pins,
                Thermometers &thermometers,
-               Scheduler::Time const executeTimeInterval = 5);
+               Scheduler::Time const executeTimeInterval = 5000000);
     virtual ~Thermostat();
     
 protected:

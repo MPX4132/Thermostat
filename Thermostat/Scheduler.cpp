@@ -21,6 +21,11 @@ std::map<Scheduler::Event *, Scheduler *> Scheduler::_EventSchedulerRegister;
 bool Scheduler::Event::PtrCompare::operator()(Scheduler::Event const * const eventL,
                                               Scheduler::Event const * const eventR)
 {
+    /*Serial.print("Comparing event A <");
+    Serial.print((unsigned long) eventL, HEX);
+    Serial.print("> vs <");
+    Serial.print((unsigned long) eventR, HEX);
+    Serial.println(">...");*/
     return (*eventL) < (*eventR);
 }
 
@@ -51,8 +56,31 @@ void Scheduler::Event::setExecuteTime(Scheduler::Time const executeTime)
     if (lastExecuteTime != this->executeTime()) Scheduler::_RecalculateEventPriority(this);
 }
 
-Scheduler::Event::Event(Scheduler::Time executeTime):
-_executeTime(executeTime)
+Scheduler::Time Scheduler::Event::executeTimeInterval() const
+{
+    return this->_executeTimeInterval;
+}
+
+void Scheduler::Event::setExecuteTimeInterval(Scheduler::Time const executeTimeInterval)
+{
+    this->_executeTimeInterval = executeTimeInterval;
+}
+
+bool Scheduler::Event::finished() const
+{
+    return !this->executeTimeInterval();
+}
+
+Scheduler::Time Scheduler::Event::_executeTimeUpdate(Scheduler::Time const updateTime)
+{
+    this->setExecuteTime(updateTime + this->executeTimeInterval());
+    return this->executeTime();
+}
+
+Scheduler::Event::Event(Scheduler::Time const executeTime,
+                        Scheduler::Time const executeTimeInterval):
+_executeTime(executeTime),
+_executeTimeInterval(executeTimeInterval)
 {
     Scheduler::_RegisterEventOfScheduler(this);
 }
@@ -66,34 +94,34 @@ Scheduler::Event::~Event()
 // =============================================================================
 // Scheduler::Daemon : Implementation
 // =============================================================================
-Scheduler::Time Scheduler::Daemon::executeTimeInterval() const
-{
-    return this->_executeTimeInterval;
-}
-
-void Scheduler::Daemon::setExecuteTimeInterval(Scheduler::Time const executeTimeInterval)
-{
-    this->_executeTimeInterval = executeTimeInterval;
-}
-
-bool Scheduler::Daemon::finished() const
-{
-    return false;
-}
-
-Scheduler::Time Scheduler::Daemon::_executeTimeUpdate(Scheduler::Time const updateTime)
-{
-    this->setExecuteTime(updateTime + this->executeTimeInterval());
-    return this->executeTime();
-}
-
-Scheduler::Daemon::Daemon(Scheduler::Time executeTime,
-                          Scheduler::Time executeTimeInterval):
-Event(executeTime),
-_executeTimeInterval(executeTimeInterval)
-{
-    
-}
+/*Scheduler::Time Scheduler::Daemon::executeTimeInterval() const
+ {
+ return this->_executeTimeInterval;
+ }
+ 
+ void Scheduler::Daemon::setExecuteTimeInterval(Scheduler::Time const executeTimeInterval)
+ {
+ this->_executeTimeInterval = executeTimeInterval;
+ }
+ 
+ bool Scheduler::Daemon::finished() const
+ {
+ return false;
+ }
+ 
+ Scheduler::Time Scheduler::Daemon::_executeTimeUpdate(Scheduler::Time const updateTime)
+ {
+ this->setExecuteTime(updateTime + this->executeTimeInterval());
+ return this->executeTime();
+ }
+ 
+ Scheduler::Daemon::Daemon(Scheduler::Time executeTime,
+ Scheduler::Time executeTimeInterval):
+ Event(executeTime),
+ _executeTimeInterval(executeTimeInterval)
+ {
+ 
+ }*/
 
 
 // =============================================================================
@@ -112,13 +140,13 @@ void Scheduler::Delegate::schedulerCompletedEvent(Scheduler * const scheduler,
 }
 
 void Scheduler::Delegate::schedulerEnqueuedEvent(Scheduler * const scheduler,
-                                                Scheduler::Event * const event)
+                                                 Scheduler::Event * const event)
 {
     return; // By default, skip.
 }
 
 void Scheduler::Delegate::schedulerDequeuedEvent(Scheduler * const scheduler,
-                                                Scheduler::Event * const event)
+                                                 Scheduler::Event * const event)
 {
     return; // By default, skip.
 }
@@ -138,17 +166,25 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
     Serial.print((unsigned long)event, HEX);
     Serial.println(">");
     if (!event) return false;
+    
+    Scheduler::_RegisterEventOfScheduler(event, this); // Associate event to this
     this->_events.insert(event);
+    
     if (this->delegate) this->delegate->schedulerEnqueuedEvent(this, event);
     return true;
 }
 
 bool Scheduler::dequeue(Scheduler::Event * const event)
 {
+    //Serial.println("[Scheduler] Will search for target...");
     auto target = std::find(this->_events.begin(), this->_events.end(), event);
+    //Serial.println("[Scheduler] Found something...");
     if (target == this->_events.end()) return false;
+    //Serial.println("[Scheduler] Target found, attempting to erase!");
     this->_events.erase(target);
+    //Serial.println("[Scheduler] Target deleted successfully!");
     if (this->delegate) this->delegate->schedulerDequeuedEvent(this, event);
+    //Serial.println("[Scheduler] Notifying delegate!");
     return true;
 }
 
@@ -169,48 +205,54 @@ void Scheduler::_update(Scheduler::Time const time)
         if (event->executeTime() > time) break;
         
         if (this->delegate) this->delegate->schedulerStartingEvent(this, event);
-
-        Serial.print("[Scheduler] Executing event <");
+        
+        Serial.println("");
+        Serial.println("==========");
+        Serial.print("[Scheduler] Event <");
         Serial.print((unsigned long)(event), HEX);
-        Serial.print("> @ ");
+        Serial.print("> starting @ ");
         Serial.println(time);
         
         int const errorCode = event->execute(time);
-
+        
         if (errorCode)
         {
             Serial.print("Event returned error code ");
             Serial.println(errorCode);
         }
         
-        Serial.print("[Scheduler] Executed event <");
+        Serial.print("[Scheduler] Event <");
         Serial.print((unsigned long)(event), HEX);
-        Serial.print("> @ ");
+        Serial.print("> stopping @ ");
         Serial.println(time);
+        Serial.println("==========");
+        Serial.println("");
+        
         
         // Can't use the line below, must use old-ass C style of casting.
         // RTTI isn't enabled and if I do enable it the damned sketch doesn't fit
         // on the fucking ESP module... I've wasted enough time looking for how
         // to enable it on a signel file.
+        
+        // Try to cast the event as daemon, if nullptr is returned it's not a daemon!
         //Scheduler::Daemon * daemon = dynamic_cast<Scheduler::Daemon*>(event);
-        //Scheduler::Daemon * daemon = nullptr;
-        //if (typeid(event) == typeid(Scheduler::Daemon *)) daemon = (Scheduler::Daemon*) event;
-        //Scheduler::Daemon * daemon = (Scheduler::Daemon*) event; // BY FORCE
         
         // Only retain daemons iff they haven't yet finished.
         //if (daemon && !daemon->finished()) continue;
 
-        #warning Removing iterator here might corrupt the iterative for-loop.
+        if (!event->finished()) continue;
+        
+#warning Removing iterator here might corrupt the iterative for-loop.
         this->_events.erase(eventi);
         //completed.push_back(eventi);
         
         if (this->delegate) this->delegate->schedulerCompletedEvent(this, event);
     }
-
-    /*for (std::vector<std::set<Scheduler::Event *, Scheduler::Event::PtrCompare>::iterator>::iterator eventi : completed) 
-    {
-        this->_events.erase(eventi);
-    }*/
+    
+    /*for (std::vector<std::set<Scheduler::Event *, Scheduler::Event::PtrCompare>::iterator>::iterator eventi : completed)
+     {
+     this->_events.erase(eventi);
+     }*/
 }
 
 void Scheduler::_RegisterEventOfScheduler(Scheduler::Event * event,
@@ -227,9 +269,15 @@ void Scheduler::_UnregisterEvent(Scheduler::Event * event)
 void Scheduler::_RecalculateEventPriority(Scheduler::Event * event)
 {
     if (!event) return;
+    //Serial.println("[Scheduler] About to recaltulate the priority!");
     Scheduler * scheduler = Scheduler::_EventSchedulerRegister[event];
+    /*Serial.print("[Scheduler] Retrived event's scheduler <");
+    Serial.print((unsigned long) scheduler, HEX);
+    Serial.println(">...");*/
     scheduler->dequeue(event);
+    //Serial.println("[Scheduler] Extracted event...");
     scheduler->enqueue(event);
+    //Serial.println("[Scheduler] Inserted event, recalucate successful!");
 }
 
 Scheduler::Scheduler():

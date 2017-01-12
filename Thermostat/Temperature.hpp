@@ -103,7 +103,7 @@ public:
     
     NumericType value(const Scale scale = Internal) const
     {
-        return Convert(this->_value, Celsius, (scale == Internal)? this->scale() : scale);
+        return Convert(this->_value, this->scale(), (scale == Internal)? this->scale() : scale);
     }
     
     void setValue(const NumericType value)

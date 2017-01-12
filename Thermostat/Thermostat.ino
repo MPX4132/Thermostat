@@ -4,10 +4,9 @@
 //#include "ESP8266WiFi.h"
 #include "Thermostat.hpp"
 #include "Scheduler.hpp"
-//#include <set>
 
 
-//#warning Remember to remove your access point data before commiting!
+#warning Remember to remove your access point data before commiting!
 const char *WIFI_SSID = "SSIDHERE";
 const char *WIFI_PASS = "PASSHERE";
 
@@ -21,21 +20,6 @@ const char *WIFI_PASS = "PASSHERE";
 // This is fixed by having the instance in a function, which runs after
 // the static code has been initialized, such as Thermostat in loop.
 
-/*class EventT : public Scheduler::Event
-{
-public:
-    int execute(Scheduler::Time const time) {
-    return 0;
-    }
-
-    EventT(Scheduler::Time const executeTime, Scheduler::Time const executeTimeInterval = 0):
-    Event(executeTime, executeTimeInterval)
-    {}
-
-    ~EventT()
-    {}
-};*/
-
 void setup() 
 {
     Serial.begin(115200);
@@ -48,25 +32,10 @@ void setup()
 void loop() 
 {
     Thermostat::Thermometers thermometers = {Thermometer({14})};
-    Thermostat thermostat({2,12,13}, thermometers);
+    Thermostat thermostat({14,12,13}, thermometers);
 
-    /*std::set<Scheduler::Event *, Scheduler::Event::PtrCompare> test;
-    EventT e1(2);
-    EventT e2(3);
-    EventT e3(1);
-
-    Serial.print("Before: ");
-    Serial.println(test.size());
-    test.insert(&e1);
-    Serial.print("After inserting e1: ");
-    Serial.println(test.size());
-    test.insert(&e2);
-    Serial.print("After inserting e2: ");
-    Serial.println(test.size());
-    test.insert(&e3);
-    Serial.print("After inserting e3: ");
-    Serial.println(test.size());*/
-
+    thermostat.setTargetTemperature(Temperature<float>(70));
+    thermostat.setMode(Thermostat::Mode::Cooling);
 
     /* while (WiFi.status() != WL_CONNECTED) {
 		Serial.print("Attempting connection to \"");

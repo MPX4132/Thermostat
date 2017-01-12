@@ -55,7 +55,8 @@ Pin::Value Pin::state() const
             Serial.println("[HW] Set Pin  Mode: INPUT");
             pinMode(this->identity(), INPUT);
             Pin::Value const value = digitalRead(this->identity());
-            
+            Serial.print("[HW] Set Pin Value: ");
+            Serial.println(value);
             return value;
 #else
             return digitalRead(this->identity());
@@ -74,11 +75,16 @@ bool Pin::setState(Pin::Value const state)
         case Pin::Mode::Auto:
         case Pin::Mode::Output: {
             this->_value = state;
-#ifdef DEBUG
+
 #ifdef HARDWARE_INDEPENDENT
+#ifdef DEBUG
             std::cout << "[HW] Set Pin  Mode: OUTPUT" << std::endl;
             std::cout << "[HW] Set Pin Value: " << state << std::endl;
+#endif
 #else
+            pinMode(this->identity(), OUTPUT);
+            digitalWrite(this->identity(), state);
+#ifdef DEBUG
             Serial.println("[HW] Set Pin  Mode: OUTPUT");
             Serial.print("[HW] Set Pin Value: ");
             Serial.println(state);

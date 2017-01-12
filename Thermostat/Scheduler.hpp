@@ -61,7 +61,7 @@ public:
         virtual bool finished() const; // Daemon
         
         //Event(Time const executeTime); // Can't use, no RTTI.
-        // Constructor with Daemon integration (fucking hate it)!
+        // Constructor with Daemon integration (hideous)!
         Event(Time const executeTime, Time const executeTimeInterval = 0);
         virtual ~Event();
         

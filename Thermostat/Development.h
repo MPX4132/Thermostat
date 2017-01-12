@@ -9,8 +9,14 @@
 #ifndef Development_h
 #define Development_h
 
-#warning Uncomment the macro below to simulate/debug on a PC.
-//#define HARDWARE_INDEPENDENT
+#ifndef XCODE_IDE
+#warning Uncomment the macro below to simulate/debug on a PC (XCode should automatically do it)
+// #define HARDWARE_INDEPENDENT
+#endif
+
+#ifdef XCODE_IDE
+#define HARDWARE_INDEPENDENT
+#endif
 
 // Comment or undefine the following macro (3 lines) to strip debug messages.
 #ifndef DEBUG

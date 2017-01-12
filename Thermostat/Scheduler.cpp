@@ -371,16 +371,16 @@ void Scheduler::_RegisterEventOfScheduler(Scheduler::Event * event,
 
 #ifdef DEBUG
 #ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Scheduler <" << std::hex << scheduler << ">] Event <"
-              << std::hex << event << "> registered." << std::endl;
+    std::cout << "[Scheduler] Scheduler <" << std::hex << scheduler << "> associated to Event <"
+              << std::hex << event << ">." << std::endl;
     
     std::cout << "[Scheduler] " << _EventSchedulerRegister.size() << " Event(s) registered." << std::endl;
 #else
-    Serial.print("[Scheduler <");
+    Serial.print("[Scheduler] Scheduler <");
     Serial.print((unsigned long) scheduler, HEX);
-    Serial.print(">] Event <");
+    Serial.print("> associated to Event <");
     Serial.print((unsigned long) event, HEX);
-    Serial.println("> registered.");
+    Serial.println(">.");
     
     Serial.print("[Scheduler] ");
     Serial.print(_EventSchedulerRegister.size());

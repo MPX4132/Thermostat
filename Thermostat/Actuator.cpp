@@ -32,6 +32,7 @@ bool Actuator::ready() const
 void Actuator::actuate(Actuator::Actions const &actions)
 {
     for (Actuator::Action const &action : actions) {
+        // Note: Count is optimal here due to the fact _pins is a map log(n).
         if (!_pins.count(action.pin)) continue; // If not ours, skip the pin.
         Actuator::Event * actuatorEvent = new Actuator::Event(_pins[action.pin],
                                                               action.configuration,

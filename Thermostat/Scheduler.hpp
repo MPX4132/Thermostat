@@ -12,6 +12,7 @@
 #include <set>
 #include <map>
 #include <vector>
+#include <algorithm>
 #include "Development.h"
 
 #ifdef HARDWARE_INDEPENDENT

@@ -109,6 +109,7 @@ void Pin::setConfiguration(Pin::Configuration const &configuration)
 
 bool Pin::_Reserve(Pin const * const pin)
 {
+    // Note: Count is optimal here due to the fact _pins is a map log(n).
     if (!pin || Pin::_Reserved.count(pin->identity()) > 0) return false;
     Pin::_Reserved[pin->identity()] = pin;
     return true;

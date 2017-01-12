@@ -167,7 +167,7 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
 #ifdef DEBUG
 #ifdef HARDWARE_INDEPENDENT
     std::cout << "[Scheduler <" << std::hex << this << ">] Enqueued Event <"
-              << std::hex << event << "> (Tracking " << this->_events.size() << " Events(s))." << std::endl;
+              << std::hex << event << "> (Tracking " << this->_events.size() << " Event(s))." << std::endl;
 #else
     Serial.print("[Scheduler <");
     Serial.print((unsigned long)this, HEX);
@@ -184,7 +184,10 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
 
 bool Scheduler::dequeue(Scheduler::Event * const event)
 {
-    Scheduler::Events::const_iterator target = this->_events.find(event);
+    // For some reason the line below doesn't find the element, but the
+    // algorithm library's version does work properly... What the hell!?
+    //Scheduler::Events::const_iterator target = this->_events.find(event);
+    Scheduler::Events::const_iterator target = std::find(this->_events.begin(), this->_events.end(), event);
 
     if (target == this->_events.end()) return false;
     
@@ -209,10 +212,16 @@ void Scheduler::UpdateInstances(Scheduler::Time const time)
 #ifdef DEBUG
 #ifdef HARDWARE_INDEPENDENT
         std::cout << "[Scheduler <" << std::hex << scheduler << ">] Starting." << std::endl;
+        std::cout << "[Scheduler <" << std::hex << scheduler << ">] Will run " << scheduler->_events.size() << " Event(s)." << std::endl;
 #else
         Serial.print("[Scheduler <");
         Serial.print((unsigned long) scheduler, HEX);
         Serial.println(">] Starting.");
+        Serial.print("[Scheduler <");
+        Serial.print((unsigned long) scheduler, HEX);
+        Serial.print(">] Will run ");
+        Serial.print(scheduler->_events.size());
+        Serial.println(" Event(s).");
 #endif
 #endif
         scheduler->_update(time);
@@ -280,8 +289,7 @@ void Scheduler::_update(Scheduler::Time const time)
         Serial.print((unsigned long)this, HEX);
         Serial.print(">] Event <");
         Serial.print((unsigned long)event, HEX);
-        Serial.print("> running.");
-        Serial.println(time);
+        Serial.println("> running.");
 #endif
 #endif
         // WARNING: I'm not sure how safe this is... I mean, we're executing code which could
@@ -313,8 +321,7 @@ void Scheduler::_update(Scheduler::Time const time)
         Serial.print((unsigned long)this, HEX);
         Serial.print(">] Event <");
         Serial.print((unsigned long)(event), HEX);
-        Serial.print("> halting.");
-        Serial.println(time);
+        Serial.println("> halting.");
         Serial.println("==========");
         Serial.println("");
 #endif
@@ -429,8 +436,31 @@ void Scheduler::_RecalculateEventPriority(Scheduler::Event * event)
 #endif
     
     Scheduler * scheduler = Scheduler::_EventSchedulerRegister[event];
-    scheduler->dequeue(event);
-    scheduler->enqueue(event);
+    if (!scheduler->dequeue(event))
+    {
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+        std::cout << "[Scheduler] ERROR: UNABLE TO DEQUEUE Event <" << std::hex << event << ">!!!" << std::endl;
+#else
+        Serial.print("[Scheduler] ERROR: UNABLE TO DEQUEUE Event <");
+        Serial.print((unsigned long) event, HEX);
+        Serial.println(">!!!");
+#endif
+#endif
+    }
+    
+    if (!scheduler->enqueue(event))
+    {
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+        std::cout << "[Scheduler] ERROR: UNABLE TO ENQUEUE Event <" << std::hex << event << ">!!!" << std::endl;
+#else
+        Serial.print("[Scheduler] ERROR: UNABLE TO ENQUEUE Event <");
+        Serial.print((unsigned long) event, HEX);
+        Serial.println(">!!!");
+#endif
+#endif
+    }
     
 #ifdef DEBUG
 #ifdef HARDWARE_INDEPENDENT

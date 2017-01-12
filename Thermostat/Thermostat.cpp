@@ -57,15 +57,11 @@ void Thermostat::setMeasurementType(Thermostat::Measurement const measurementTyp
 
 void Thermostat::_standby()
 {
-    Serial.println("[Thermostat] Standby actions start.");
-
     this->actuate({ // Toggle all pins to 0, or release all relays, immediately.
         {this->_pinout[0], {Pin::Mode::Output, 0}, 0},
         {this->_pinout[1], {Pin::Mode::Output, 0}, 0},
         {this->_pinout[2], {Pin::Mode::Output, 0}, 0}
     });
-    
-    Serial.println("[Thermostat] Standby actions end.");
 }
 
 void Thermostat::_setCooler(bool const cool)
@@ -94,20 +90,18 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     // Check Actuator instance Pins are ready for operations.
     if (!this->ready()) return 2; // Pins not ready or unavailable.
 
-    Serial.print("[Thermostat] Daemon running update, mode: ");
     switch (this->mode())
     {
-        case Off: Serial.println("Off"); this->_standby();
+        case Off: this->_standby();
             break;
             
-        case Cooling: Serial.println("Cooling"); this->_setCooler(this->temperature() > this->targetTemperature());
+        case Cooling: this->_setCooler(this->temperature() > this->targetTemperature());
             break;
             
-        case Heating: Serial.println("Heating"); this->_setHeater(this->temperature() < this->targetTemperature());
+        case Heating: this->_setHeater(this->temperature() < this->targetTemperature());
             break;
             
         case Auto: {
-            Serial.println("Auto");
             if (this->temperature() > (this->targetTemperature() + this->_targetTemperatureThreshold)) {
                 this->_setCooler(true);
             } else
@@ -122,7 +116,6 @@ int Thermostat::execute(Scheduler::Time const updateTime)
             break;
     }
     this->_executeTimeUpdate(updateTime);
-    Serial.println("[Thermostat] Daemon finished.");
     return 0;
 }
 

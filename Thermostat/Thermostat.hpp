@@ -10,11 +10,11 @@
 #define Thermostat_hpp
 
 #include <vector>
+#include "Development.h"
 #include "Actuator.hpp"
 #include "Thermometer.hpp"
 #include "Temperature.hpp"
 #include "Scheduler.hpp"
-#include <Arduino.h>
 
 // =============================================================================
 // Thermostat : This class abstracts the functionality of an HVAC control system
@@ -66,9 +66,15 @@ public:
     void setMeasurementType(Measurement const measurementType = TemperatureUnit);
     
     // The pin order is as follows by default: {FAN call, COOL call, HEAT call}
+#ifdef HARDWARE_INDEPENDENT
+    Thermostat(Actuator::Pins const &pins,
+               Thermometers &thermometers,
+               Scheduler::Time const executeTimeInterval = 100);
+#else
     Thermostat(Actuator::Pins const &pins,
                Thermometers &thermometers,
                Scheduler::Time const executeTimeInterval = 5000000);
+#endif
     virtual ~Thermostat();
     
 protected:

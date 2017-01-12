@@ -13,7 +13,13 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#include "Development.h"
+
+#ifdef HARDWARE_INDEPENDENT
+#include <iostream>
+#else
 #include <Arduino.h>
+#endif
 
 // =============================================================================
 // Scheduler : This class is responsible for scheduling and executing jobs at
@@ -67,6 +73,8 @@ public:
         Time _executeTimeUpdate(Time const updateTime); // Daemon
     };
     
+    typedef std::set<Event *, Event::PtrCompare> Events;
+    
     // =========================================================================
     // Daemon: A schedulable class used to trigger repeating events.
     // =========================================================================
@@ -117,9 +125,11 @@ public:
     
 protected:
     
-    std::set<Event *, Event::PtrCompare> _events;
+    Events _events;
     
     virtual void _update(Time const time);
+    
+    virtual Events::iterator _dequeue(Events::iterator &event);
     
     
     static std::set<Scheduler *> _Register;

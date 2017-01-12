@@ -43,9 +43,25 @@ Pin::Value Pin::state() const
     switch (this->mode())
     {
         case Pin::Mode::Auto:
-        case Pin::Mode::Input:
+        case Pin::Mode::Input: {
+#ifdef HARDWARE_INDEPENDENT
+#ifdef DEBUG
+            std::cout << "[HW] Set Pin  Mode: INPUT" << std::endl;
+            std::cout << "[HW] Get Pin Value: 0 (hardcoded zero)" << std::endl;
+#endif
+            return 0;
+#else // Hardware Dependent
+#ifdef DEBUG
+            Serial.println("[HW] Set Pin  Mode: INPUT");
             pinMode(this->identity(), INPUT);
+            Pin::Value const value = digitalRead(this->identity());
+            
+            return value;
+#else
             return digitalRead(this->identity());
+#endif
+#endif
+        }   break;
         default: break;
     }
     return this->_value;
@@ -56,10 +72,19 @@ bool Pin::setState(Pin::Value const state)
     switch (this->mode())
     {
         case Pin::Mode::Auto:
-        case Pin::Mode::Output:
-            pinMode(this->identity(), OUTPUT);
-            digitalWrite(this->identity(), (this->_value = state));
-            return true;
+        case Pin::Mode::Output: {
+            this->_value = state;
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+            std::cout << "[HW] Set Pin  Mode: OUTPUT" << std::endl;
+            std::cout << "[HW] Set Pin Value: " << state << std::endl;
+#else
+            Serial.println("[HW] Set Pin  Mode: OUTPUT");
+            Serial.print("[HW] Set Pin Value: ");
+            Serial.println(state);
+#endif
+#endif
+        }   return true;
         default: break;
     }
     return false;

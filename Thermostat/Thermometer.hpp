@@ -10,6 +10,7 @@
 #define Thermometer_hpp
 
 #include <utility>
+#include "Development.h"
 #include "Temperature.hpp"
 #include "Actuator.hpp"
 #include "Sensor.hpp"

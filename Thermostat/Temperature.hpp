@@ -9,6 +9,7 @@
 #ifndef Temperature_hpp
 #define Temperature_hpp
 
+#include "Development.h"
 
 // =============================================================================
 // Temperature : This class abstracts different types of temperatures and sets

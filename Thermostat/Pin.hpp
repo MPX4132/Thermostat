@@ -10,7 +10,13 @@
 #define Pin_hpp
 
 #include <map>
+#include "Development.h"
+
+#ifdef HARDWARE_INDEPENDENT
+#include <iostream>
+#else
 #include <Arduino.h>
+#endif
 
 // =============================================================================
 // Pin : This class abstracts the I/O pins found on the development board. The

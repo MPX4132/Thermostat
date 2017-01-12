@@ -21,7 +21,6 @@ std::map<Scheduler::Event *, Scheduler *> Scheduler::_EventSchedulerRegister;
 bool Scheduler::Event::PtrCompare::operator()(Scheduler::Event const * const eventL,
                                               Scheduler::Event const * const eventR)
 {
-    // If both events have the same time, then go by their address.
     return (eventL->executeTime() == eventR->executeTime())? (eventL < eventR) : (*eventL) < (*eventR);
 }
 
@@ -158,16 +157,16 @@ Scheduler::Delegate::~Delegate()
 // =============================================================================
 bool Scheduler::enqueue(Scheduler::Event * const event)
 {
-    Serial.print("[Scheduler <");
-    Serial.print((unsigned long)this, HEX);
-    Serial.print(">] Enqueueing Event <");
-    Serial.print((unsigned long)event, HEX);
-    Serial.println(">");
     if (!event) return false;
     
     Scheduler::_RegisterEventOfScheduler(event, this); // Associate event to this
     this->_events.insert(event);
     
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << "[Scheduler <" << std::hex << this << ">] Enqueued Event <"
+              << std::hex << event << "> (Tracking " << this->_events.size() << " Events(s))." << std::endl;
+#else
     Serial.print("[Scheduler <");
     Serial.print((unsigned long)this, HEX);
     Serial.print(">] Enqueued Event <");
@@ -175,6 +174,8 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
     Serial.print("> (Tracking ");
     Serial.print(this->_events.size());
     Serial.println(" Event(s)).");
+#endif
+#endif
     
     if (this->delegate) this->delegate->schedulerEnqueuedEvent(this, event);
     return true;
@@ -182,106 +183,142 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
 
 bool Scheduler::dequeue(Scheduler::Event * const event)
 {
-    Serial.print("[Scheduler <");
-    Serial.print((unsigned long)this, HEX);
-    Serial.print(">] Dequeueing Event <");
-    Serial.print((unsigned long)event, HEX);
-    Serial.println(">");
-    
-    //Serial.println("[Scheduler] Will search for target...");
     auto target = std::find(this->_events.begin(), this->_events.end(), event);
-    //Serial.println("[Scheduler] Found something...");
+
     if (target == this->_events.end()) return false;
-    //Serial.println("[Scheduler] Target found, attempting to erase!");
-    this->_events.erase(target);
-    //Serial.println("[Scheduler] Target deleted successfully!");
-    if (this->delegate) this->delegate->schedulerDequeuedEvent(this, event);
-    //Serial.println("[Scheduler] Notifying delegate!");
     
-    Serial.print("[Scheduler <");
-    Serial.print((unsigned long)this, HEX);
-    Serial.print(">] Dequeued Event <");
-    Serial.print((unsigned long)event, HEX);
-    Serial.print("> (Tracking ");
-    Serial.print(this->_events.size());
-    Serial.println(" Event(s)).");
+    this->_dequeue(target);
     
     return true;
 }
 
 void Scheduler::UpdateAll(Scheduler::Time const time)
 {
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << std::endl << "==============" << std::endl;
+#else
     Serial.println("");
     Serial.println("==============");
+#endif
+#endif
+
     for (Scheduler * const scheduler : Scheduler::_Register)
     {
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+        std::cout << "[Scheduler <" << std::hex << scheduler << ">] Starting." << std::endl;
+#else
         Serial.print("[Scheduler <");
         Serial.print((unsigned long) scheduler, HEX);
         Serial.println(">] Starting.");
+#endif
+#endif
         scheduler->_update(time);
+        
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+        std::cout << "[Scheduler <" << std::hex << scheduler << ">] Stopping." << std::endl;
+#else
         Serial.print("[Scheduler <");
         Serial.print((unsigned long) scheduler, HEX);
         Serial.println(">] Stopping.");
+#endif
+#endif
     }
+    
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << "==============" << std::endl << std::endl;
+#else
     Serial.println("==============");
     Serial.println("");
+#endif
+#endif
 }
 
 void Scheduler::_update(Scheduler::Time const time)
 {
-    //std::set<Event *, Event::PtrCompare> _events;
-    //std::vector<std::set<Scheduler::Event *, Scheduler::Event::PtrCompare>::iterator> completed;
-    std::set<Scheduler::Event *, Scheduler::Event::PtrCompare> events(this->_events);
-    for (std::set<Scheduler::Event *, Scheduler::Event::PtrCompare>::iterator eventi = events.begin(); eventi != events.end(); eventi++) {
+    Scheduler::Events::iterator eventi = this->_events.begin();
+    while (eventi != this->_events.end())
+    {
         Event * const event = *eventi;
         
         //if (event->executeTime() > time) break;
         if (event->executeTime() > time)
         {
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+            std::cout << "[Scheduler <" << std::hex << this << ">] Event <"
+                      << std::hex << event << "> will execute @ " << std::dec << event->executeTime() << "; Time: " << time << std::endl;
+#else
             Serial.print("[Scheduler <");
             Serial.print((unsigned long)this, HEX);
             Serial.print(">] Event <");
             Serial.print((unsigned long) event, HEX);
             Serial.print("> will execute @ ");
             Serial.print(event->executeTime());
-            Serial.print(", it's currently ");
+            Serial.print("; Time: ");
             Serial.println(time);
-            continue;
+#endif
+#endif
+            ++eventi; continue;
         }
         
         if (this->delegate) this->delegate->schedulerStartingEvent(this, event);
         
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+        std::cout << std::endl << "==========" << std::endl;
+        std::cout << "[Scheduler <" << std::hex << this << ">] Event <"
+                  << std::hex << event << "> running." << std::endl;
+#else
         Serial.println("");
         Serial.println("==========");
         Serial.print("[Scheduler <");
         Serial.print((unsigned long)this, HEX);
         Serial.print(">] Event <");
         Serial.print((unsigned long)event, HEX);
-        Serial.print("> starting @ ");
+        Serial.print("> running.");
         Serial.println(time);
+#endif
+#endif
         
         int const errorCode = event->execute(time);
         
         if (errorCode)
         {
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+            std::cout << "Event returned error code " << errorCode << std::endl;
+#else
             Serial.print("Event returned error code ");
             Serial.println(errorCode);
+#endif
+#endif
         }
         
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+        std::cout << "[Scheduler <" << std::hex << this << ">] Event <"
+                  << std::hex << event << "> halting." << std::endl;
+        std::cout << "==========" << std::endl << std::endl;
+#else
         Serial.print("[Scheduler <");
         Serial.print((unsigned long)this, HEX);
         Serial.print(">] Event <");
         Serial.print((unsigned long)(event), HEX);
-        Serial.print("> stopping @ ");
+        Serial.print("> halting.");
         Serial.println(time);
         Serial.println("==========");
         Serial.println("");
+#endif
+#endif
         
         
-        // Can't use the line below, must use old-ass C style of casting.
-        // RTTI isn't enabled and if I do enable it the damned sketch doesn't fit
-        // on the fucking ESP module... I've wasted enough time looking for how
-        // to enable it on a signel file.
+        // Can't use the line below, since RTTI isn't enabled, and it wont fit
+        // if enabled for all files including core and other bs. Can't figure out how to enable it
+        // for independent files to only enable if for this class.
         
         // Try to cast the event as daemon, if nullptr is returned it's not a daemon!
         //Scheduler::Daemon * daemon = dynamic_cast<Scheduler::Daemon*>(event);
@@ -289,46 +326,78 @@ void Scheduler::_update(Scheduler::Time const time)
         // Only retain daemons iff they haven't yet finished.
         //if (daemon && !daemon->finished()) continue;
 
-        if (!event->finished()) continue;
+        //if (!event->finished()) continue;
+        if (!event->finished())
+        {
+            ++eventi; continue;
+        }
         
-#warning Removing iterator here might corrupt the iterative for-loop.
-        //this->_events.erase(eventi);
-        //completed.push_back(eventi);
+        eventi = this->_dequeue(eventi);//this->_events.erase(eventi);
         
         if (this->delegate) this->delegate->schedulerCompletedEvent(this, event);
     }
+}
+
+Scheduler::Events::const_iterator Scheduler::_dequeue(Events::const_iterator &event)
+{
+    Scheduler::_RegisterEventOfScheduler(*event); // Disassociate event from this
     
-    /*for (std::vector<std::set<Scheduler::Event *, Scheduler::Event::PtrCompare>::iterator>::iterator eventi : completed)
-     {
-     this->_events.erase(eventi);
-     }*/
+    Events::const_iterator const nextEvent = this->_events.erase(event);
+    
+    if (this->delegate) this->delegate->schedulerDequeuedEvent(this, *event);
+    
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << "[Scheduler <" << std::hex << this << ">] Dequeued Event <"
+              << std::hex << *event << "> (Tracking " << this->_events.size() << " Events(s))." << std::endl;
+#else
+    Serial.print("[Scheduler <");
+    Serial.print((unsigned long)this, HEX);
+    Serial.print(">] Dequeued Event <");
+    Serial.print((unsigned long) *event, HEX);
+    Serial.print("> (Tracking ");
+    Serial.print(this->_events.size());
+    Serial.println(" Event(s)).");
+#endif
+#endif
+    
+    return nextEvent;
 }
 
 void Scheduler::_RegisterEventOfScheduler(Scheduler::Event * event,
                                           Scheduler * scheduler)
 {
     _EventSchedulerRegister[event] = scheduler;
-    if (scheduler)
-    {
-        Serial.print("[Scheduler <");
-        Serial.print((unsigned long) scheduler, HEX);
-        Serial.print(">] Event <");
-        Serial.print((unsigned long) event, HEX);
-        Serial.println("> registered.");
-    } else {
-        Serial.print("[Scheduler] Event <");
-        Serial.print((unsigned long) event, HEX);
-        Serial.println("> registered.");
-    }
+
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << "[Scheduler <" << std::hex << scheduler << ">] Event <"
+              << std::hex << event << "> registered." << std::endl;
+    
+    std::cout << "[Scheduler] " << _EventSchedulerRegister.size() << " Event(s) registered." << std::endl;
+#else
+    Serial.print("[Scheduler <");
+    Serial.print((unsigned long) scheduler, HEX);
+    Serial.print(">] Event <");
+    Serial.print((unsigned long) event, HEX);
+    Serial.println("> registered.");
     
     Serial.print("[Scheduler] ");
     Serial.print(_EventSchedulerRegister.size());
     Serial.println(" Event(s) registered.");
+#endif
+#endif
 }
 
 void Scheduler::_UnregisterEvent(Scheduler::Event * event)
 {
     _EventSchedulerRegister.erase(event);
+    
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << "[Scheduler] Event <" << std::hex << event << "> unregistered." << std::endl;
+    std::cout << "[Scheduler] " << _EventSchedulerRegister.size() << " Event(s) registered." << std::endl;
+#else
     Serial.print("[Scheduler] Event <");
     Serial.print((unsigned long) event, HEX);
     Serial.println("> unregistered.");
@@ -336,26 +405,42 @@ void Scheduler::_UnregisterEvent(Scheduler::Event * event)
     Serial.print("[Scheduler] ");
     Serial.print(_EventSchedulerRegister.size());
     Serial.println(" Event(s) registered.");
+#endif
+#endif
 }
 
 void Scheduler::_RecalculateEventPriority(Scheduler::Event * event)
 {
     if (!event) return;
+    
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << "[Scheduler] Recalculating Event <" << std::hex << event << "> priority." << std::endl;
+#else
     Serial.print("[Scheduler] Recalculating Event <");
     Serial.print((unsigned long) event, HEX);
     Serial.println("> priority.");
+#endif
+#endif
     //Serial.println("[Scheduler] About to recaltulate the priority!");
     Scheduler * scheduler = Scheduler::_EventSchedulerRegister[event];
-    /*Serial.print("[Scheduler] Retrived event's scheduler <");
-    Serial.print((unsigned long) scheduler, HEX);
+    /*std::cout << "[Scheduler] Retrived event's scheduler <");
+    std::cout << (unsigned long) scheduler, HEX);
     Serial.println(">...");*/
     scheduler->dequeue(event);
     //Serial.println("[Scheduler] Extracted event...");
     scheduler->enqueue(event);
     //Serial.println("[Scheduler] Inserted event, recalucate successful!");
+    
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << "[Scheduler] Recalculated Event <" << std::hex << event << "> priority." << std::endl;
+#else
     Serial.print("[Scheduler] Recalculated Event <");
     Serial.print((unsigned long) event, HEX);
     Serial.println("> priority.");
+#endif
+#endif
 }
 
 Scheduler::Scheduler():

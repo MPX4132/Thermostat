@@ -10,6 +10,7 @@
 #define Sensor_hpp
 
 #include <vector>
+#include "Development.h"
 #include "Actuator.hpp"
 
 // =============================================================================

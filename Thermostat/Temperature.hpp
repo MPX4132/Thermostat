@@ -11,6 +11,10 @@
 
 #include "Development.h"
 
+// Need to change this template to store internal values as kelvin...
+// That should simplify the logic quite a bit and also spare the microprocessor
+// from having to keep converting shit when dealing with this class.
+
 // =============================================================================
 // Temperature : This class abstracts different types of temperatures and sets
 // the international standard as the base temperature.

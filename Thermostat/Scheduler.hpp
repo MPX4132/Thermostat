@@ -12,7 +12,6 @@
 #include <set>
 #include <map>
 #include <vector>
-#include <algorithm>
 #include "Development.h"
 
 #ifdef HARDWARE_INDEPENDENT
@@ -75,10 +74,14 @@ public:
     
     typedef std::set<Event *, Event::PtrCompare> Events;
     
+    // Unfortunately I can't use the class below the way it was designed due to
+    // the fact polymorphic objects can't be downcasted due to a lack of rtti.
+    // Runtime Type Information does not fit on the memory of ESP8266-03, which
+    // is the module(s) I've been using to test the code with.
     // =========================================================================
     // Daemon: A schedulable class used to trigger repeating events.
     // =========================================================================
-    /*class Daemon : public Event { // Can't use: no rtti, no runtime class info
+    /*class Daemon : public Event {
     public:
         
         virtual Time executeTimeInterval() const;
@@ -118,7 +121,7 @@ public:
     virtual bool enqueue(Event * const event);
     virtual bool dequeue(Event * const event);
     
-    static void UpdateAll(Time const time);
+    static void UpdateInstances(Time const time);
     
     Scheduler();
     virtual ~Scheduler();

@@ -18,7 +18,7 @@
 // =============================================================================
 // Thermometer : This class abstracts the functionality of temperature reading.
 // The thermometer class is meant to be subclassed to implement the sense method
-// of the Sensor class, which should return 
+// of the Sensor class, which generate/get temperature info and return that.
 // =============================================================================
 class Thermometer : protected Sensor {
 public:

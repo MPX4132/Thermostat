@@ -30,7 +30,7 @@ int main(int argc, const char * argv[]) {
     for (;;) {
         // Scheduler at microsecond resolution.
         Scheduler::Time const now = micros();
-        Scheduler::UpdateAll(now);
+        Scheduler::UpdateInstances(now);
         
         std::cout << "[Cycle] Completed at: " << std::dec << now << std::endl;
     }

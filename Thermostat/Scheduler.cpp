@@ -159,8 +159,10 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
 {
     if (!event) return false;
     
-    Scheduler::_RegisterEventOfScheduler(event, this); // Associate event to this
+    Scheduler::_RegisterEventOfScheduler(event, this); // Associate to scheduler
     this->_events.insert(event);
+    
+    if (this->delegate) this->delegate->schedulerEnqueuedEvent(this, event);
     
 #ifdef DEBUG
 #ifdef HARDWARE_INDEPENDENT
@@ -177,13 +179,12 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
 #endif
 #endif
     
-    if (this->delegate) this->delegate->schedulerEnqueuedEvent(this, event);
     return true;
 }
 
 bool Scheduler::dequeue(Scheduler::Event * const event)
 {
-    auto target = std::find(this->_events.begin(), this->_events.end(), event);
+    Scheduler::Events::const_iterator target = this->_events.find(event);
 
     if (target == this->_events.end()) return false;
     
@@ -192,7 +193,7 @@ bool Scheduler::dequeue(Scheduler::Event * const event)
     return true;
 }
 
-void Scheduler::UpdateAll(Scheduler::Time const time)
+void Scheduler::UpdateInstances(Scheduler::Time const time)
 {
 #ifdef DEBUG
 #ifdef HARDWARE_INDEPENDENT
@@ -283,7 +284,11 @@ void Scheduler::_update(Scheduler::Time const time)
         Serial.println(time);
 #endif
 #endif
-        
+        // WARNING: I'm not sure how safe this is... I mean, we're executing code which could
+        // potentially modify this instance by adding more events while we're iterating over
+        // them already... Mmmm so yeah... I could make a copy of the events before entering
+        // this loop and iterate over that but sounds like it would be a performance hit.
+        // Probably a lot safer though, idk.
         int const errorCode = event->execute(time);
         
         if (errorCode)
@@ -332,7 +337,7 @@ void Scheduler::_update(Scheduler::Time const time)
             ++eventi; continue;
         }
         
-        eventi = this->_dequeue(eventi);//this->_events.erase(eventi);
+        eventi = this->_dequeue(eventi);
         
         if (this->delegate) this->delegate->schedulerCompletedEvent(this, event);
     }
@@ -422,15 +427,10 @@ void Scheduler::_RecalculateEventPriority(Scheduler::Event * event)
     Serial.println("> priority.");
 #endif
 #endif
-    //Serial.println("[Scheduler] About to recaltulate the priority!");
+    
     Scheduler * scheduler = Scheduler::_EventSchedulerRegister[event];
-    /*std::cout << "[Scheduler] Retrived event's scheduler <");
-    std::cout << (unsigned long) scheduler, HEX);
-    Serial.println(">...");*/
     scheduler->dequeue(event);
-    //Serial.println("[Scheduler] Extracted event...");
     scheduler->enqueue(event);
-    //Serial.println("[Scheduler] Inserted event, recalucate successful!");
     
 #ifdef DEBUG
 #ifdef HARDWARE_INDEPENDENT

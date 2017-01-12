@@ -13,7 +13,6 @@
 // =============================================================================
 Temperature<float> Thermometer::temperature()
 {
-    // Change temperature class to store values as kelvin (neutral/scientific).
     return Temperature<float>();
 }
 

@@ -85,10 +85,11 @@ void Thermostat::_setHeater(bool const heat)
 int Thermostat::execute(Scheduler::Time const updateTime)
 {
     // Verify minimum pin count to properly operate an HVAC with relays (min 3).
-    if (this->_pins.size() < 3) return 1; // Not enough control pins.
+    // Why 3? Well: Fan call pin, Cool call pin & Heat call pin.
+    if (this->_pins.size() < 3) return 1; // Not enough control pins (error code 1)
     
     // Check Actuator instance Pins are ready for operations.
-    if (!this->ready()) return 2; // Pins not ready or unavailable.
+    if (!this->ready()) return 2; // Pins not ready or unavailable (error code 2)
 
     switch (this->mode())
     {
@@ -115,6 +116,9 @@ int Thermostat::execute(Scheduler::Time const updateTime)
         default: this->_standby(); // Fuck you too.
             break;
     }
+    
+    // Since this is a Daemon, and Daemons repeat until finished,
+    // calcualte next execution time and request scheduler priority update.
     this->_executeTimeUpdate(updateTime);
     return 0;
 }

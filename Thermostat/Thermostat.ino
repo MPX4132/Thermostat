@@ -54,7 +54,7 @@ void loop()
     {        
         // Scheduler at microsecond resolution.
         Scheduler::Time const now = micros();
-        Scheduler::UpdateAll(now);
+        Scheduler::UpdateInstances(now);
         
         Serial.print("[Cycle] Completed at: ");
         Serial.println(now);

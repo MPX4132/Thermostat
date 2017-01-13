@@ -37,7 +37,7 @@ void Actuator::actuate(Actuator::Actions const &actions)
         Actuator::Event * actuatorEvent = new Actuator::Event(_pins[action.pin],
                                                               action.configuration,
                                                               action.time);
-        this->_scheduler.enqueue(actuatorEvent);
+        this->_scheduler.enqueue(static_cast<Scheduler::Event *>(actuatorEvent));
     }
 }
 
@@ -62,8 +62,8 @@ Actuator::Event::~Event()
     
 }
 
-void Actuator::schedulerCompletedEvent(Scheduler * const scheduler,
-                                       Scheduler::Event * const event)
+void Actuator::schedulerDequeuedEvent(Scheduler * const scheduler,
+                                      Scheduler::Event * const event)
 {
     delete event; // Delete the dynamically created actuator event object
 }

@@ -70,8 +70,8 @@ protected:
     Scheduler _scheduler;
     Pins const _pinout;
     
-    virtual void schedulerCompletedEvent(Scheduler * const scheduler,
-                                 Scheduler::Event * const event);
+    virtual void schedulerDequeuedEvent(Scheduler * const scheduler,
+                                        Scheduler::Event * const event);
 };
 
 #endif /* Actuator_hpp */

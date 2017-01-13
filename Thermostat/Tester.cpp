@@ -32,7 +32,9 @@ int main(int argc, const char * argv[]) {
         Scheduler::Time const now = micros();
         Scheduler::UpdateInstances(now);
         
+#ifdef CYCLE_LOGS
         std::cout << "[Cycle] Completed at: " << std::dec << now << std::endl;
+#endif
     }
     
     return 0;

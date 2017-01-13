@@ -21,6 +21,7 @@
 #include <Arduino.h>
 #endif
 
+
 // =============================================================================
 // Scheduler : This class is responsible for scheduling and executing jobs at
 // specific times, given some type of clock.
@@ -38,39 +39,35 @@ public:
         
         struct PtrCompare {
             // Strict Weak Ordering: Returns ture if eventL < eventR
-            bool operator()(Event const * const eventL, Event const * const eventR);
+            bool operator()(Event const * const eventL, Event const * const eventR) const;
         };
         
-        virtual int execute(Time const time) = 0;
-        
+        // The following serve to sort the events by priority.
         virtual bool operator==(Event const &event) const;
         virtual bool operator>(Event const &event) const;
         virtual bool operator<(Event const &event) const;
         
+        virtual int execute(Time const time) = 0;
+        
         // Realize the implications of this...
         // This means the subclass may change its time, requiring the scheduler
         // to implement a means to update its internal event calling sequence.
+        Time executeTime() const;
+        void setExecuteTime(Time const executeTime);
         
-        virtual Time executeTime() const;
-        virtual void setExecuteTime(Time const executeTime);
-        
-        // Methods from Daemon
-        virtual Time executeTimeInterval() const;
-        virtual void setExecuteTimeInterval(Time const executeTimeInterval);
-        
-        virtual bool finished() const; // Daemon
-        
-        //Event(Time const executeTime); // Can't use, no RTTI.
-        // Constructor with Daemon integration (hideous)!
-        Event(Time const executeTime, Time const executeTimeInterval = 0);
+        Event(Time const executeTime);
         virtual ~Event();
         
     protected:
         
-        Time _executeTime;
-        Time _executeTimeInterval; // Daemon
+        // Realize the implications of this...
+        // This means that subclasses may wish to overwrite the virtual method,
+        // making it possible the execution time changes without having notified
+        // the scheduler with the event enqueued. At that point the scheduler
+        // could potentially skip events down the queue with higher priority!
+        virtual void _executeTimeReprioritize();
         
-        Time _executeTimeUpdate(Time const updateTime); // Daemon
+        Time _executeTime;
     };
     
     typedef std::set<Event *, Event::PtrCompare> Events;
@@ -82,7 +79,7 @@ public:
     // =========================================================================
     // Daemon: A schedulable class used to trigger repeating events.
     // =========================================================================
-    /*class Daemon : public Event {
+    class Daemon : public Event {
     public:
         
         virtual Time executeTimeInterval() const;
@@ -90,13 +87,18 @@ public:
         
         virtual bool finished() const;
         
-        Daemon(Time executeTime, Time executeTimeInterval);
+        Daemon(Time const executeTime, Time const executeTimeInterval);
+        virtual ~Daemon();
         
     protected:
         Time _executeTimeInterval;
         
+        void _executeTimeReprioritize(); // Triggers Daemon priority update.
+        
         Time _executeTimeUpdate(Time const updateTime);
-    };*/
+    };
+    
+    typedef std::set<Daemon *, Event::PtrCompare> Daemons;
     
     // =========================================================================
     // Delegate: A common interface used to interface with other classes.
@@ -119,8 +121,14 @@ public:
     
     Delegate * delegate;
     
+    // Due to a lack of runtime type information (RTTI) it's not possible to use
+    // dynamic_cast/typeid, meaning we must overload the enqueue and dequeue
+    // methods to support Daemon instances.
     virtual bool enqueue(Event * const event);
+    virtual bool enqueue(Daemon * const daemon);
+    
     virtual bool dequeue(Event * const event);
+    virtual bool dequeue(Daemon * const daemon);
     
     static void UpdateInstances(Time const time);
     
@@ -129,19 +137,31 @@ public:
     
 protected:
     
+    typedef std::set<Scheduler *> Schedules;
+    typedef std::map<Event *, Scheduler *> Clients;
+    
     Events _events;
+    Events _eventsEnqueued;
+    Events _eventsDequeued;
+    
+    Daemons _daemons;
+    Daemons _daemonsEnqueued;
+    Daemons _daemonsDequeued;
     
     virtual void _update(Time const time);
     
-    virtual Events::iterator _dequeue(Events::iterator &event);
+    void _processPendingEnqueueEvents();
+    void _processPendingDequeueEvents();
     
     
-    static std::set<Scheduler *> _Register;
-    static std::map<Event *, Scheduler *> _EventSchedulerRegister;
+    static Schedules _Register;
+    static Clients _EventSchedulerRegister;
     
-    static void _RegisterEventOfScheduler(Event * event, Scheduler * scheduler = nullptr);
-    static void _UnregisterEvent(Event * event);
-    static void _RecalculateEventPriority(Event * event);
+    static void _RegisterEventOfScheduler(Event * const event, Scheduler * const scheduler = nullptr);
+    static void _UnregisterEvent(Event * const event);
+    
+    static bool _RecalculateEventPriority(Event * const event);
+    static bool _RecalculateDaemonPriority(Daemon * const event);
 };
 
 #endif /* Scheduler_hpp */

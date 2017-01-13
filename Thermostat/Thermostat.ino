@@ -22,7 +22,7 @@ const char *WIFI_PASS = "PASSHERE";
 
 void setup() 
 {
-    Serial.begin(115200);
+    Serial.begin(74880);
     Serial.println("Setting up...");
    
 	//WiFi.setOutputPower(0); // Temporary workaround for ESP-1 to ESP-6.
@@ -55,9 +55,11 @@ void loop()
         // Scheduler at microsecond resolution.
         Scheduler::Time const now = micros();
         Scheduler::UpdateInstances(now);
-        
+
+#ifdef CYCLE_LOG
         Serial.print("[Cycle] Completed at: ");
         Serial.println(now);
+#endif
         
         wdt_reset(); // Notify watchdog microcontroller hasn't crashed.
     }

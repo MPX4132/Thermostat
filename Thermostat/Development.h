@@ -23,4 +23,7 @@
 #define DEBUG
 #endif
 
+#define CYCLE_LOGS
+#define SCHEDULER_LOGS
+
 #endif /* Development_h */

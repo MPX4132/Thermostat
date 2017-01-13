@@ -131,14 +131,14 @@ Thermostat::Thermostat(Actuator::Pins const &pins,
                        Thermometers &thermometers,
                        Scheduler::Time const executeTimeInterval):
 Actuator(pins),
-//Scheduler::Daemon(0, executeTimeInterval),
-Scheduler::Event(0, executeTimeInterval),
+Scheduler::Daemon(0, executeTimeInterval),
+//Scheduler::Event(0, executeTimeInterval),
 thermometers(thermometers),
 _measurmentType(Thermostat::Measurement::TemperatureUnit),
 _mode(Thermostat::Mode::Off)
 {
     // targetTemp, targetTempThresh & _scheduler are fine auto-initialized.
-    this->_scheduler.enqueue(static_cast<Scheduler::Event * const>(this));
+    this->_scheduler.enqueue(this);
 }
 
 Thermostat::~Thermostat()

@@ -10,7 +10,7 @@
 #define Thermostat_hpp
 
 #include <vector>
-#include "Development.h"
+#include "Development.hpp"
 #include "Actuator.hpp"
 #include "Thermometer.hpp"
 #include "Temperature.hpp"

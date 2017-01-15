@@ -9,7 +9,7 @@
 #ifndef Temperature_hpp
 #define Temperature_hpp
 
-#include "Development.h"
+#include "Development.hpp"
 
 // Need to change this template to store internal values as kelvin...
 // That should simplify the logic quite a bit and also spare the microprocessor

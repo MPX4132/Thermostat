@@ -1,13 +1,13 @@
 //
-//  Development.h
-//  ThermostatDebugging
+//  Development.hpp
+//  Thermostat
 //
 //  Created by Matias Barcenas on 1/11/17.
 //  Copyright © 2017 Matias Barcenas. All rights reserved.
 //
 
-#ifndef Development_h
-#define Development_h
+#ifndef Development_hpp
+#define Development_hpp
 
 #ifndef XCODE_IDE
 #warning Uncomment the macro below to simulate/debug on a PC (XCode should automatically do it)

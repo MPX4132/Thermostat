@@ -11,7 +11,10 @@
 
 #ifndef XCODE_IDE
 #warning Uncomment the macro below to simulate/debug on a PC (XCode should automatically do it)
+
 // #define HARDWARE_INDEPENDENT
+
+#warning The code must be modified to compile on Visual Studio due to changes in the Microsoft-provided libraries.
 #endif
 
 #ifdef XCODE_IDE

@@ -132,7 +132,6 @@ Thermostat::Thermostat(Actuator::Pins const &pins,
                        Scheduler::Time const executeTimeInterval):
 Actuator(pins),
 Scheduler::Daemon(0, executeTimeInterval),
-//Scheduler::Event(0, executeTimeInterval),
 thermometers(thermometers),
 _measurmentType(Thermostat::Measurement::TemperatureUnit),
 _mode(Thermostat::Mode::Off)

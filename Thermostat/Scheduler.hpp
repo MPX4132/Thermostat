@@ -11,16 +11,15 @@
 
 #include <set>
 #include <map>
-#include <vector>
 #include <algorithm>
 #include "Development.h"
+#include "Identifiable.hpp"
 
 #ifdef HARDWARE_INDEPENDENT
 #include <iostream>
 #else
 #include <Arduino.h>
 #endif
-
 
 // =============================================================================
 // Scheduler : This class is responsible for scheduling and executing jobs at
@@ -37,45 +36,39 @@ public:
     class Event {
     public:
         
-        struct PtrCompare {
-            // Strict Weak Ordering: Returns ture if eventL < eventR
-            bool operator()(Event const * const eventL, Event const * const eventR) const;
-        };
-        
-        // The following serve to sort the events by priority.
-        virtual bool operator==(Event const &event) const;
-        virtual bool operator>(Event const &event) const;
-        virtual bool operator<(Event const &event) const;
-        
+        // The following method is meant to be implemented, meaning this class
+        // must be subclassed and custom code to execute at certain time placed
+        // in the execute method. Once enqueued in a scheduler the current time
+        // at the time of exectuion will be passed to the event.
         virtual int execute(Time const time) = 0;
         
-        // Realize the implications of this...
+        Time executeTime() const;
+        
+        // NOTE: The following method(s) have serious implications, read below:
         // This means the subclass may change its time, requiring the scheduler
         // to implement a means to update its internal event calling sequence.
-        Time executeTime() const;
         void setExecuteTime(Time const executeTime);
         
-        Event(Time const executeTime);
+        Event(Time const executeTime = 0); // By default, immediate event.
         virtual ~Event();
         
     protected:
         
-        // Realize the implications of this...
+        Time _executeTime;
+        
+        // NOTE: The following method(s) have serious implications, read below:
         // This means that subclasses may wish to overwrite the virtual method,
         // making it possible the execution time changes without having notified
         // the scheduler with the event enqueued. At that point the scheduler
         // could potentially skip events down the queue with higher priority!
         virtual void _executeTimeReprioritize();
-        
-        Time _executeTime;
     };
-    
-    typedef std::set<Event *, Event::PtrCompare> Events;
     
     // Unfortunately I can't use the class below the way it was designed due to
     // the fact polymorphic objects can't be downcasted due to a lack of rtti.
     // Runtime Type Information does not fit on the memory of ESP8266-03, which
     // is the module(s) I've been using to test the code with.
+    // Working around it by using a super-bootlegged template I designed, fugly.
     // =========================================================================
     // Daemon: A schedulable class used to trigger repeating events.
     // =========================================================================
@@ -87,18 +80,15 @@ public:
         
         virtual bool finished() const;
         
-        Daemon(Time const executeTime, Time const executeTimeInterval);
+        Daemon(Time const executeTime = 0, Time const executeTimeInterval = 0);
         virtual ~Daemon();
         
     protected:
         Time _executeTimeInterval;
         
-        void _executeTimeReprioritize(); // Triggers Daemon priority update.
-        
         Time _executeTimeUpdate(Time const updateTime);
     };
     
-    typedef std::set<Daemon *, Event::PtrCompare> Daemons;
     
     // =========================================================================
     // Delegate: A common interface used to interface with other classes.
@@ -121,14 +111,8 @@ public:
     
     Delegate * delegate;
     
-    // Due to a lack of runtime type information (RTTI) it's not possible to use
-    // dynamic_cast/typeid, meaning we must overload the enqueue and dequeue
-    // methods to support Daemon instances.
     virtual bool enqueue(Event * const event);
-    virtual bool enqueue(Daemon * const daemon);
-    
     virtual bool dequeue(Event * const event);
-    virtual bool dequeue(Daemon * const daemon);
     
     static void UpdateInstances(Time const time);
     
@@ -138,30 +122,62 @@ public:
 protected:
     
     typedef std::set<Scheduler *> Schedules;
-    typedef std::map<Event *, Scheduler *> Clients;
+    typedef std::set<Event *> Events;
     
-    Events _events;
-    Events _eventsEnqueued;
-    Events _eventsDequeued;
+    // =========================================================================
+    // Task: A wrapper for events to avoid potentially deleted memory, also
+    // used to keep equal-priority elements together in a set.
+    // =========================================================================
+    struct Task
+    {
+        bool operator<(Task const &other) const;
+        bool operator>(Task const &other) const;
+        bool operator==(Task const &other) const;
+        
+        // The following memeber is marked mutable, signaling the compiler the
+        // member should be modifiable in const cases. In this case, it's maked
+        // mutable because I've got a set of Task, and sets only return
+        // const_iterator (or implicitly const iterator), and the events member
+        // needs to be mutable (note, it doesn't affect Task's key/order in set).
+        mutable Events events;
+        
+        Time const priority;
+        
+        Task(Task const &task);
+        Task(Event * const event);
+        Task(Time const priority);
+    };
     
-    Daemons _daemons;
-    Daemons _daemonsEnqueued;
-    Daemons _daemonsDequeued;
+    // I'm using a Task set because if I were to use a map I wouldn't know which
+    // priority I should stop at, and it's relevant because events must be
+    // executed following their priority, so iterating over the map is impossible.
+    // [Explanation: Because iterating over the map may result in mixed results.]
+    typedef std::set<Task> Tasks;
+    typedef std::map<Event *, Scheduler *> Associations;
     
-    virtual void _update(Time const time);
+    Tasks _tasks;
+    Tasks _tasksEnqueued;
+    Tasks _tasksDequeued;
+    
+    virtual void _processEventsForTime(Time const priority);
     
     void _processPendingEnqueueEvents();
     void _processPendingDequeueEvents();
     
     
-    static Schedules _Register;
-    static Clients _EventSchedulerRegister;
+    // The following static member holds all instances created of Scheduler,
+    // which the class uses to update by calling the static UpdateInstances
+    // method once an update cycle is being executed.
+    static Schedules _InstanceRegister;
     
-    static void _RegisterEventOfScheduler(Event * const event, Scheduler * const scheduler = nullptr);
-    static void _UnregisterEvent(Event * const event);
+    // The following static member associates instances of Event to instances of
+    // Scheduler in constant time to update event priority in constant time.
+    static Associations _AssociationRegister;
     
-    static bool _RecalculateEventPriority(Event * const event);
-    static bool _RecalculateDaemonPriority(Daemon * const event);
+    static void _AssociateEventToScheduler(Event * const event, Scheduler * const scheduler = nullptr);
+    static void _DissasociateEvent(Event * const event);
+    
+    static bool _ReprioritizeEvent(Event * const event);
 };
 
 #endif /* Scheduler_hpp */

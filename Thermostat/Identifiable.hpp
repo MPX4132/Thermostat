@@ -29,23 +29,12 @@ public:
     
     static bool Instanced(void const * instance)
     {
-/*#ifdef DEBUG
-#ifdef HARDWARE_INDEPENDENT
-        std::cout << "[Class <" << Identifiable<T>::ID() << ">] " << Identifiable<T>::_Instances.size() << " instances registered." << std::endl;
-#else
-        Serial.print("[Class <");
-        Serial.print((unsigned long) Identifiable<T>::ID());
-        Serial.print(">] ");
-        Serial.print(Identifiable<T>::_Instances.size());
-        Serial.println(" instances registered.");
-#endif
-#endif*/
         return Identifiable<T>::_Instances.count(instance);
     }
     
     static void Register(void const * instance)
     {
-#ifdef DEBUG
+#if defined DEBUG && defined RTTI_LOGS
 #ifdef HARDWARE_INDEPENDENT
         std::cout << "[Class <" << Identifiable<T>::ID() << ">] Registering Instance <" << std::hex << instance << ">, " << Identifiable<T>::_Instances.size() << " currently registered." << std::endl;
 #else
@@ -59,15 +48,15 @@ public:
 #endif
 #endif
         Identifiable<T>::_Instances.insert(instance);
-#ifdef DEBUG
+#if defined DEBUG && defined RTTI_LOGS
 #ifdef HARDWARE_INDEPENDENT
-        std::cout << "[Class <" << Identifiable<T>::ID() << ">] Instance <" << std::hex << instance << "> registered, " << Identifiable<T>::_Instances.size() << " now registered." << std::endl;
+        std::cout << "[Class <" << Identifiable<T>::ID() << ">] Registered Instance <" << std::hex << instance << ">, " << Identifiable<T>::_Instances.size() << " now registered." << std::endl;
 #else
         Serial.print("[Class <");
         Serial.print((unsigned long) Identifiable<T>::ID());
-        Serial.print(">] Instance <");
+        Serial.print(">] Registered Instance <");
         Serial.print((unsigned long) instance);
-        Serial.print("> registered, ");
+        Serial.print(">, ");
         Serial.print(Identifiable<T>::_Instances.size());
         Serial.println(" now registered.");
 #endif
@@ -76,7 +65,7 @@ public:
     
     static void Unregister(void const * instance)
     {
-#ifdef DEBUG
+#if defined DEBUG && defined RTTI_LOGS
 #ifdef HARDWARE_INDEPENDENT
         std::cout << "[Class <" << Identifiable<T>::ID() << ">] Unregistering Instance <" << std::hex << instance << ">, " << Identifiable<T>::_Instances.size() << " currently registered." << std::endl;
 #else
@@ -90,7 +79,7 @@ public:
 #endif
 #endif
         Identifiable<T>::_Instances.erase(instance);
-#ifdef DEBUG
+#if defined DEBUG && defined RTTI_LOGS
 #ifdef HARDWARE_INDEPENDENT
         std::cout << "[Class <" << Identifiable<T>::ID() << ">] Instance <" << std::hex << instance << "> unregistered, " << Identifiable<T>::_Instances.size() << " now registered." << std::endl;
 #else

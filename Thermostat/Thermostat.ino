@@ -4,6 +4,7 @@
 //#include "ESP8266WiFi.h"
 #include "Thermostat.hpp"
 #include "Scheduler.hpp"
+#include "Development.h"
 
 
 #warning Remember to remove your access point data before commiting!
@@ -56,7 +57,7 @@ void loop()
         Scheduler::Time const now = micros();
         Scheduler::UpdateInstances(now);
 
-#ifdef CYCLE_LOG
+#ifdef CYCLE_LOGS
         Serial.print("[Cycle] Completed at: ");
         Serial.println(now);
 #endif

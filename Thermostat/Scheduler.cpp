@@ -177,14 +177,14 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
     
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Scheduler <" << std::hex << this << ">] Event <" << std::hex << event << "> is pending enqueue (" << task->events.size() << " pending Event(s))." << std::endl;
+    std::cout << "[Scheduler <" << std::hex << this << ">] Event <" << std::hex << event << "> is pending enqueue (" << ((task != this->_tasksEnqueued.end())? task->events.size() : 1) << " pending Event(s))." << std::endl;
 #else
     Serial.print("[Scheduler <");
     Serial.print((unsigned long) this, HEX);
     Serial.print(">] Event <");
     Serial.print((unsigned long) event, HEX);
     Serial.print("> is pending enqueue (");
-    Serial.print(task->events.size());
+    Serial.print((task != this->_tasksEnqueued.end())? task->events.size() : 1);
     Serial.println(" pending Event(s)).");
 #endif
 #endif
@@ -205,7 +205,7 @@ bool Scheduler::dequeue(Scheduler::Event * const event)
 #endif
 #endif
     
-    Scheduler::Tasks::const_iterator task; // For checking in _tasks and _enqueuedTasks.
+    Scheduler::Tasks::const_iterator task; // Used to check existance of event in _tasks or _enqueuedTasks.
     
     task = this->_tasks.find(Scheduler::Task(event->executeTime()));
     
@@ -268,21 +268,63 @@ void Scheduler::UpdateInstances(Scheduler::Time const time)
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
         std::cout << "[Scheduler <" << std::hex << scheduler << "> IS STARTING]" << std::endl;
+        for (Scheduler::Task const &task : scheduler->_tasks)
+        {
+            std::cout << "[Scheduler <" << std::hex << scheduler << ">] Holding " << task.events.size() << " Event(s) <P: " << task.priority << "> pending runtime." << std::endl;
+        }
+        for (Scheduler::Task const &task : scheduler->_tasksEnqueued)
+        {
+            std::cout << "[Scheduler <" << std::hex << scheduler << ">] Holding " << task.events.size() << " Event(s) <P: " << task.priority << "> pending enqueued." << std::endl;
+        }
+        for (Scheduler::Task const &task : scheduler->_tasksDequeued)
+        {
+            std::cout << "[Scheduler <" << std::hex << scheduler << ">] Holding " << task.events.size() << " Event(s) <P: " << task.priority << "> pending dequeued." << std::endl;
+        }
 #else
         Serial.print("[Scheduler <");
         Serial.print((unsigned long) scheduler, HEX);
         Serial.println("> IS STARTING]");
+        for (Scheduler::Task const &task : scheduler->_tasks)
+        {
+            Serial.print("[Scheduler <");
+            Serial.print((unsigned long) scheduler, HEX);
+            Serial.print(">] Holding ");
+            Serial.print(task.events.size());
+            Serial.print(" Event(s) <P: ");
+            Serial.print(task.priority);
+            Serial.println("> pending runtime.");
+        }
+        for (Scheduler::Task const &task : scheduler->_tasksEnqueued)
+        {
+            Serial.print("[Scheduler <");
+            Serial.print((unsigned long) scheduler, HEX);
+            Serial.print(">] Holding ");
+            Serial.print(task.events.size());
+            Serial.print(" Event(s) <P: ");
+            Serial.print(task.priority);
+            Serial.println("> pending enqueued.");
+        }
+        for (Scheduler::Task const &task : scheduler->_tasksDequeued)
+        {
+            Serial.print("[Scheduler <");
+            Serial.print((unsigned long) scheduler, HEX);
+            Serial.print(">] Holding ");
+            Serial.print(task.events.size());
+            Serial.print(" Event(s) <P: ");
+            Serial.print(task.priority);
+            Serial.println("> pending dequeued.");
+        }
 #endif
 #endif
         scheduler->_processEventsForTime(time);
         
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
-        std::cout << "[Scheduler <" << std::hex << scheduler << ">  IS PAUSING]" << std::endl;
+        std::cout << "[Scheduler <" << std::hex << scheduler << "> IS PAUSING]" << std::endl;
 #else
         Serial.print("[Scheduler <");
         Serial.print((unsigned long) scheduler, HEX);
-        Serial.println(">  IS PAUSING]");
+        Serial.println("> IS PAUSING]");
 #endif
 #endif
     }
@@ -372,15 +414,22 @@ void Scheduler::_processPendingEnqueueEvents()
     // Enqueue any pending Events. It's safe at this point since there's
     // nothing modifying _tasksEnqueued at this point.
     // Enqueued Event has already been called in the enqueue method.
-    for (Scheduler::Task const &task : this->_tasksEnqueued)
+    for (Scheduler::Task const &taskEnqueued : this->_tasksEnqueued)
     {
-        for (Scheduler::Event * const event : task.events)
+        // Preemptively attempt to find category (priority Task) in _tasks to save lookups each time.
+        // If not found we'll try again in the for loop below only for the first failure.
+        Scheduler::Tasks::const_iterator task = this->_tasks.find(Scheduler::Task(taskEnqueued.priority));
+        
+        for (Scheduler::Event * const event : taskEnqueued.events)
         {
             
-            Scheduler::Tasks::const_iterator task = this->_tasks.find(Scheduler::Task(event->executeTime()));
-            
-            if (task == this->_tasks.end()) this->_tasks.insert(Scheduler::Task(event));
-            else task->events.insert(event);
+            if (task == this->_tasks.end())
+            {
+                // If no Task for priority was found, create a new Task with the current event.
+                this->_tasks.insert(Scheduler::Task(event));
+                // Update the task iterator to point to the proper Task.
+                task = this->_tasks.find(Scheduler::Task(taskEnqueued.priority));
+            } else task->events.insert(event);
             
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
@@ -407,8 +456,8 @@ void Scheduler::_processPendingDequeueEvents()
     for (Scheduler::Task const &taskDequeued : this->_tasksDequeued)
     {
         // Prepare to avoid having to repeat search every time, these are n log( size + n ), I think.
-        Scheduler::Tasks::const_iterator task = this->_tasks.find(Scheduler::Task(taskDequeued.priority));
-        Scheduler::Tasks::const_iterator taskEnqueued = this->_tasksEnqueued.find(Scheduler::Task(taskDequeued.priority));
+        Scheduler::Tasks::const_iterator const task = this->_tasks.find(Scheduler::Task(taskDequeued.priority));
+        Scheduler::Tasks::const_iterator const taskEnqueued = this->_tasksEnqueued.find(Scheduler::Task(taskDequeued.priority));
         
         for (Scheduler::Event * const event : taskDequeued.events)
         {

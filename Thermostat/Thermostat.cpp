@@ -84,6 +84,17 @@ void Thermostat::_setHeater(bool const heat)
 
 int Thermostat::execute(Scheduler::Time const updateTime)
 {
+#ifdef DEBUG
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << "[Thermostat <" << std::hex << this << ">] Running update (" << std::dec << updateTime << ")." << std::endl;
+#else
+    Serial.print("[Thermostat <");
+    Serial.print((unsigned long) this, HEX);
+    Serial.print(">] Running update (");
+    Serial.print(updateTime);
+    Serial.println(").");
+#endif
+#endif
     // Verify minimum pin count to properly operate an HVAC with relays (min 3).
     // Why 3? Well: Fan call pin, Cool call pin & Heat call pin.
     if (this->_pins.size() < 3) return 1; // Not enough control pins (error code 1)

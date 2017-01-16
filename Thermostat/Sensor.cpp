@@ -12,7 +12,7 @@
 // Sensor : Implementation
 // =============================================================================
 Sensor::Data Sensor::sense() {
-    return static_cast<Sensor::Data>(0);
+    return Sensor::Data(); // Empty data
 }
 
 Sensor::Sensor(Actuator::Pins const &pins):

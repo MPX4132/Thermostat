@@ -13,17 +13,30 @@
 // =============================================================================
 Temperature<float> Thermometer::temperature()
 {
-    return Temperature<float>();
+    this->sense();
+    return this->_temperature;
 }
 
+float Thermometer::humidity()
+{
+    this->sense();
+    return this->_humidity;
+}
 
 Thermometer::Range Thermometer::range() const
 {
-    return std::make_pair(rangeMinimum, rangeMaximum);
+    return this->_range;
 }
 
-Thermometer::Thermometer(Actuator::Pins const &pins):
-Sensor(pins)
+bool Thermometer::_validTemperature(Temperature<float> const &temperature)
+{
+    return temperature >= this->range().first && temperature <= this->range().second;
+}
+
+Thermometer::Thermometer(Actuator::Pins const &pins,
+                         Thermometer::Range const &range):
+Sensor(pins),
+_range(range)
 {
     
 }

@@ -2,10 +2,13 @@
 
 
 //#include "ESP8266WiFi.h"
+#include "Development.hpp"
 #include "Thermostat.hpp"
 #include "Scheduler.hpp"
-#include "Development.hpp"
+#include "Sensor.hpp"
+#include "DHT22.hpp"
 
+#ifndef HARDWARE_INDEPENDENT
 
 #warning Remember to remove your access point data before commiting!
 const char *WIFI_SSID = "SSIDHERE";
@@ -23,8 +26,8 @@ const char *WIFI_PASS = "PASSHERE";
 
 void setup() 
 {
-    Serial.begin(74880);
-    Serial.println("Setting up...");
+    Serial.begin(115200);
+    Serial.println("Thermostat starting up...");
    
 	//WiFi.setOutputPower(0); // Temporary workaround for ESP-1 to ESP-6.
 	//WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -32,11 +35,14 @@ void setup()
 
 void loop() 
 {
-    Thermostat::Thermometers thermometers = {Thermometer({14})};
+
+    /*Thermostat::Thermometers thermometers = {Thermometer({14})};
     Thermostat thermostat({14,12,13}, thermometers);
 
     thermostat.setTargetTemperature(Temperature<float>(70));
-    thermostat.setMode(Thermostat::Mode::Cooling);
+    thermostat.setMode(Thermostat::Mode::Cooling);*/
+
+    DHT22 thermometer(2);
 
     /* while (WiFi.status() != WL_CONNECTED) {
 		Serial.print("Attempting connection to \"");
@@ -52,16 +58,30 @@ void loop()
 	Serial.println(WiFi.localIP()); */
 
     for (;;)
-    {        
+    {
+        delay(5000);
+
         // Scheduler at microsecond resolution.
         Scheduler::Time const now = micros();
-        Scheduler::UpdateInstances(now);
+        //Scheduler::UpdateInstances(now);
+
+//#ifdef DEBUG
+        Serial.print("Attempting to contact sensor (");
+        Serial.print(now);
+        Serial.println(")...");
+//#endif
+
+        Temperature<float> temperature = thermometer.temperature();
+        Serial.print("Temperature is ");
+        Serial.print(temperature.value(Temperature<float>::Scale::Fahrenheit));
+        Serial.println("F");
 
 #ifdef CYCLE_LOGS
         Serial.print("[Cycle] Completed at: ");
         Serial.println(now);
 #endif
-        
         wdt_reset(); // Notify watchdog microcontroller hasn't crashed.
     }
 }
+#endif
+

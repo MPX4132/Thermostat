@@ -20,6 +20,7 @@
 class Sensor : protected Actuator
 {
 public:
+    
     typedef unsigned char Byte;
     typedef std::vector<Byte> Data;
     
@@ -27,6 +28,7 @@ public:
     
     Sensor(Actuator::Pins const &pins);
     virtual ~Sensor();
+    
 };
 
 #endif /* Sensor_hpp */

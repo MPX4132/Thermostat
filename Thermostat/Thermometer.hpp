@@ -22,19 +22,35 @@
 // =============================================================================
 class Thermometer : protected Sensor {
 public:
+    
     // Range denotes the thermometer's range as a tuple, [Minimum, Maximum].
     typedef std::pair<Temperature<float>, Temperature<float>> Range;
     
-    virtual Temperature<float> temperature();// = 0;
+    // NOTE: The methods below call Sensor's sense() method to update values,
+    // which are then returned by default. However, these can be overwritten.
+    virtual Temperature<float> temperature();
+    virtual float humidity();
     
-    Range range() const;
+    virtual Range range() const;
     
-    Thermometer(Actuator::Pins const &pins);
+    Thermometer(Actuator::Pins const &pins,
+                Range const &range = std::make_pair(Temperature<float>(),
+                                                    Temperature<float>()));
     virtual ~Thermometer();
     
+    
 protected:
-    Temperature<float> const rangeMaximum;
-    Temperature<float> const rangeMinimum;
+    
+    // The following serve for two purposes:
+    // 1. To have a common method which will update the values below and not be
+    //    forced to have to implement the temperature() and humidity() methods.
+    // 2. To cache for values to retrival if the sensor needs to timeout.
+    Temperature<float> _temperature;
+    Range const _range;
+    float _humidity;
+
+    bool _validTemperature(Temperature<float> const &temperature);
+    
 };
 
 #endif /* Thermometer_hpp */

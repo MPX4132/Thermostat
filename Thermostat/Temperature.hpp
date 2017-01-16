@@ -30,19 +30,29 @@ public:
         Fahrenheit
     };
     
-    bool operator==(const Temperature<NumericType>& other) const
+    bool operator==(Temperature<NumericType> const &other) const
     {
         return this->value() == other.value(this->scale());
     }
     
-    bool operator<(const Temperature<NumericType>& other) const
+    bool operator<(Temperature<NumericType> const &other) const
     {
         return this->value() < other.value(this->scale());
     }
     
-    bool operator>(const Temperature<NumericType>& other) const
+    bool operator>(Temperature<NumericType> const &other) const
     {
         return this->value() > other.value(this->scale());
+    }
+    
+    bool operator<=(Temperature<NumericType> const &other) const
+    {
+        return this->value() <= other.value(this->scale());
+    }
+    
+    bool operator>=(Temperature<NumericType> const &other) const
+    {
+        return this->value() >= other.value(this->scale());
     }
     
     Temperature& operator=(const Temperature<NumericType>& newValue)

@@ -11,11 +11,17 @@
 
 #include <vector>
 #include "Development.hpp"
-#include "Actuator.hpp"
-#include "Thermometer.hpp"
 #include "Temperature.hpp"
+#include "Thermometer.hpp"
 #include "Scheduler.hpp"
 #include "Identifiable.hpp"
+#include "Actuator.hpp"
+
+#ifdef HARDWARE_INDEPENDENT
+#include <iostream>
+#else
+#include <Arduino.h>
+#endif
 
 // =============================================================================
 // Thermostat : This class abstracts the functionality of an HVAC control system

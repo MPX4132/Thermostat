@@ -26,7 +26,7 @@ class Pin
 {
   public:
     typedef unsigned int Identifier;
-    typedef int Value;
+    typedef short Value;
 
     enum Mode
     {

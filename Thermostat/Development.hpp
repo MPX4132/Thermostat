@@ -21,13 +21,16 @@
 #define HARDWARE_INDEPENDENT
 #endif
 
-// Comment or undefine the following macro (3 lines) to strip debug messages.
+// Comment/Undefine the following macro (3 lines) to strip debug messages.
 #ifndef DEBUG
 #define DEBUG
 #endif
 
-#define CYCLE_LOGS
-#define SCHEDULER_LOGS
+// Uncomment/Comment the following macros to add/remove debug messages.
+//#define PIN_LOGS
+//#define CYCLE_LOGS
+//#define SCHEDULER_LOGS
 //#define RTTI_LOGS
+//#define DHT22_LOGS
 
 #endif /* Development_h */

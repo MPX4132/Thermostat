@@ -39,7 +39,7 @@ Temperature<float> Thermostat::targetTemperature() const
     return this->_targetTemperature;
 }
 
-void Thermostat::setTargetTemperature(Temperature<float> const targetTemperature, Temperature<float> const targetTemperatureThreshold)
+void Thermostat::setTargetTemperature(Temperature<float> const targetTemperature, float const targetTemperatureThreshold)
 {
     _targetTemperatureThreshold = targetTemperatureThreshold;
     _targetTemperature = targetTemperature;
@@ -102,6 +102,8 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     // Check Actuator instance Pins are ready for operations.
     if (!this->ready()) return 2; // Pins not ready or unavailable (error code 2)
 
+    // Read this only once every update, since the sensor may need to timeout for a bit.
+    // In my case, the DHT22 needs to timeout for about two seconds after a read cycle.
     Temperature<float> const currentTemperature = this->temperature();
     
 #if defined DEBUG && defined THERMOSTAT_LOGS

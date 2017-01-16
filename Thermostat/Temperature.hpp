@@ -55,48 +55,56 @@ public:
         return this->value() >= other.value(this->scale());
     }
     
-    Temperature& operator=(const Temperature<NumericType>& newValue)
+    Temperature& operator=(Temperature<NumericType> const &newValue)
     {
         this->setValue(newValue);
         return *this;
     }
     
-    Temperature& operator=(const NumericType newValue)
+    Temperature& operator=(NumericType const newValue)
     {
         this->setValue(newValue);
         return *this;
     }
     
-    NumericType operator+=(const Temperature<NumericType>& other)
+    NumericType operator+=(Temperature<NumericType> const &other)
     {
         this->setValue(this->value() + other.value(this->scale()));
         return this->value();
     }
     
-    NumericType operator-=(const Temperature<NumericType>& other)
+    NumericType operator-=(Temperature<NumericType> const &other)
     {
         this->setValue(this->value() - other.value(this->scale()));
         return this->value();
     }
     
-    NumericType operator/=(const NumericType value)
+    NumericType operator/=(NumericType const value)
     {
         this->setValue(this->value() / value);
         return this->value();
     }
     
-    NumericType operator*=(const NumericType value)
+    NumericType operator*=(NumericType const value)
     {
         this->setValue(this->value() * value);
         return this->value();
     }
     
-    NumericType operator+(const Temperature<NumericType>& other) {
+    NumericType operator+(Temperature<NumericType> const &other) {
         return this->value() + other.value(this->scale());
     }
     
-    NumericType operator-(const Temperature<NumericType>& other) {
+    NumericType operator-(Temperature<NumericType> const &other) {
         return this->value() - other.value(this->scale());
+    }
+    
+    NumericType operator+(NumericType const &other) {
+        return this->value() + other;
+    }
+    
+    NumericType operator-(NumericType const &other) {
+        return this->value() - other;
     }
     
     Scale scale() const
@@ -104,7 +112,7 @@ public:
         return this->_scale;
     }
     
-    void setScale(const Scale newScale, bool updateValue = true)
+    void setScale(Scale const newScale, bool updateValue = true)
     {
         // If it's the "Internal" scale, fuck off...
         if (newScale == Internal) return;
@@ -115,31 +123,31 @@ public:
         _scale = newScale;
     }
     
-    NumericType value(const Scale scale = Internal) const
+    NumericType value(Scale const scale = Internal) const
     {
         return Convert(this->_value, this->scale(), (scale == Internal)? this->scale() : scale);
     }
     
-    void setValue(const NumericType value)
+    void setValue(NumericType const value)
     {
         _value = value;
     }
     
-    void setValue(const Temperature<NumericType>& temperature)
+    void setValue(Temperature<NumericType> const &temperature)
     {
         this->setScale(temperature.scale(), false);
         this->setValue(temperature.value());
     }
     
-    static NumericType Convert(const Temperature<NumericType>& temperature,
-                               const Scale outputScale)
+    static NumericType Convert(Temperature<NumericType> const &temperature,
+                               Scale const outputScale)
     {
         return Convert(temperature.value(), temperature.scale(), outputScale);
     }
     
-    static NumericType Convert(const NumericType value,
-                               const Scale inputScale,
-                               const Scale outputScale)
+    static NumericType Convert(NumericType const value,
+                               Scale const inputScale,
+                               Scale const outputScale)
     {
         // If we're not really converting, skip everything...
         if (inputScale == outputScale) return value;
@@ -177,14 +185,14 @@ public:
         return value;
     }
     
-    Temperature(const Temperature<NumericType>& temperature):
+    Temperature(Temperature<NumericType> const &temperature):
     _value(temperature.value()),
     _scale(temperature.scale())
     {
         
     }
     
-    Temperature(const NumericType value = 72, const Scale scale = Fahrenheit):
+    Temperature(NumericType const value = 72, Scale const scale = Fahrenheit):
     _value(value),
     _scale(scale)
     {

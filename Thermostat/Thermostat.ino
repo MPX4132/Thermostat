@@ -38,8 +38,8 @@ void loop()
     DHT22 thermometer(2); delay(1000); // Wait a second for module stabilization.
     Thermostat thermostat({14,12,13}, {&thermometer});
 
-    thermostat.setTargetTemperature(Temperature<float>(70));
-    thermostat.setMode(Thermostat::Mode::Cooling);
+    thermostat.setTargetTemperature(Temperature<float>(76), 0);
+    thermostat.setMode(Thermostat::Mode::Auto);
 
     /* while (WiFi.status() != WL_CONNECTED) {
 		Serial.print("Attempting connection to \"");

@@ -25,7 +25,7 @@ int main(int argc, const char * argv[]) {
     DHT22 thermometer(2);
     Thermostat thermostat({14,12,13}, {&thermometer});
     
-    thermostat.setTargetTemperature(Temperature<float>(70));
+    thermostat.setTargetTemperature(Temperature<float>(76), 0);
     thermostat.setMode(Thermostat::Mode::Cooling);
     
     for (;;) {

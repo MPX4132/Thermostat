@@ -33,7 +33,7 @@ bool Thermometer::_validTemperature(Temperature<float> const &temperature)
     return temperature >= this->range().first && temperature <= this->range().second;
 }
 
-Thermometer::Thermometer(Actuator::Pins const &pins,
+Thermometer::Thermometer(Pin::Arrangement const &pins,
                          Thermometer::Range const &range):
 Sensor(pins),
 _range(range)

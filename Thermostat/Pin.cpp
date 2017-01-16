@@ -11,7 +11,7 @@
 // =============================================================================
 // Pin : Static Variables Declaration
 // =============================================================================
-std::map<Pin::Identifier, Pin const *> Pin::_Reserved;
+Pin::Association Pin::_Reserved;
 
 
 // =============================================================================
@@ -111,7 +111,17 @@ void Pin::setConfiguration(Pin::Configuration const &configuration)
     this->setState(configuration.value);
 }
 
-bool Pin::_Reserve(Pin const * const pin)
+Pin::Set Pin::MakeSet(Pin::Arrangement const &pins)
+{
+    Pin::Set set;
+    for (Pin::Identifier const identifier : pins)
+    {
+        set.emplace(identifier, Pin(identifier));
+    }
+    return set;
+}
+
+bool Pin::_Reserve(Pin * const pin)
 {
     // Note: Count is optimal here due to the fact _pins is a map log(n).
     if (!pin || Pin::_Reserved.count(pin->identity()) > 0) return false;
@@ -121,7 +131,11 @@ bool Pin::_Reserve(Pin const * const pin)
 
 bool Pin::_Release(Pin const * const pin)
 {
-    return pin && Pin::_Reserved.erase(pin->identity());
+    if (!pin || !pin->ready()) return false;
+    Pin::Identifier const identity = pin->identity();
+    // Invalidate current owner, since it's no longer in control.
+    Pin::_Reserved[identity]->_mode = Pin::Mode::Invalid;
+    return Pin::_Reserved.erase(identity);
 }
 
 Pin::Pin(Pin::Identifier const identifier):
@@ -130,6 +144,23 @@ _value(0),
 _mode(Pin::Mode::Auto)
 {
     this->setMode(Pin::_Reserve(this)? Pin::Mode::Auto : Pin::Mode::Invalid);
+}
+
+Pin::Pin(Pin const &pin):
+_identity(pin._identity),
+_value(pin._value),
+_mode(pin._mode)
+{
+    // A copy invalidates the previous Pin, giving the copy precedence.
+    if (Pin::_Release(&pin)) Pin::_Reserve(this);
+}
+
+Pin::Pin():
+_identity(0),
+_value(0),
+_mode(Pin::Mode::Invalid)
+{
+    
 }
 
 Pin::~Pin()

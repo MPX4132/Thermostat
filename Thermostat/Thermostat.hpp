@@ -33,7 +33,7 @@ public:
     // ================================================================
     // Thermostat Types
     // ================================================================
-    typedef std::vector<Thermometer> Thermometers;
+    typedef std::vector<Thermometer *> Thermometers;
     
     enum Mode
     {
@@ -72,13 +72,12 @@ public:
     void setMeasurementType(Measurement const measurementType = TemperatureUnit);
     
     // The pin order is as follows by default: {FAN call, COOL call, HEAT call}
+
+    Thermostat(Pin::Arrangement const &pins,
+               Thermometers const &thermometers,
 #ifdef HARDWARE_INDEPENDENT
-    Thermostat(Actuator::Pins const &pins,
-               Thermometers &thermometers,
                Scheduler::Time const executeTimeInterval = 5);
 #else
-    Thermostat(Actuator::Pins const &pins,
-               Thermometers &thermometers,
                Scheduler::Time const executeTimeInterval = 5000000);
 #endif
     virtual ~Thermostat();

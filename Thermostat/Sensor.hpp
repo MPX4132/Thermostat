@@ -12,6 +12,13 @@
 #include <vector>
 #include "Development.hpp"
 #include "Actuator.hpp"
+#include "Pin.hpp"
+
+#ifdef HARDWARE_INDEPENDENT
+#include <iostream>
+#else
+#include <Arduino.h>
+#endif
 
 // =============================================================================
 // Sensor : This class abstracts the functionality of Sensor I/O modules.
@@ -24,9 +31,9 @@ public:
     typedef unsigned char Byte;
     typedef std::vector<Byte> Data;
     
-    virtual Data sense();// = 0;
+    virtual Data sense();
     
-    Sensor(Actuator::Pins const &pins);
+    Sensor(Pin::Arrangement const &pins);
     virtual ~Sensor();
     
 };

@@ -22,32 +22,16 @@ Scheduler::Time micros() {
 
 
 int main(int argc, const char * argv[]) {
-    
-    /*Thermostat::Thermometers thermometers = {Thermometer({14})};
-    Thermostat thermostat({14,12,13}, thermometers);
+    DHT22 thermometer(2);
+    Thermostat thermostat({14,12,13}, {&thermometer});
     
     thermostat.setTargetTemperature(Temperature<float>(70));
-    thermostat.setMode(Thermostat::Mode::Cooling);*/
-    
-    DHT22 thermometer(2);
+    thermostat.setMode(Thermostat::Mode::Cooling);
     
     for (;;) {
         // Scheduler at microsecond resolution.
-//        Scheduler::Time const now = micros();
-//        Scheduler::UpdateInstances(now);
-    
-        Sensor::Data data = thermometer.sense();
-        
-        if (!data.size())
-        {
-#ifdef DEBUG
-#ifdef HARDWARE_INDEPENDENT
-            std::cout << "FAILURE!" << std::endl;
-#else
-            Serial.println("FAILURE!");
-#endif
-#endif
-        }
+        Scheduler::Time const now = micros();
+        Scheduler::UpdateInstances(now);
         
 #ifdef CYCLE_LOGS
         std::cout << "[Cycle] Completed at: " << std::dec << now << std::endl;

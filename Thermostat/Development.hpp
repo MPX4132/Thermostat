@@ -32,5 +32,6 @@
 //#define SCHEDULER_LOGS
 //#define RTTI_LOGS
 //#define DHT22_LOGS
+#define THERMOSTAT_LOGS
 
 #endif /* Development_h */

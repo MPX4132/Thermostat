@@ -40,12 +40,13 @@ public:
     };
     
     typedef std::vector<Action> Actions;
-    typedef std::vector<Pin::Identifier> Pins;
+    //typedef std::vector<Pin::Identifier> Pins;
     
     virtual bool ready() const;
     virtual void actuate(Actions const &actions);
     
-    Actuator(Pins const &pins);
+    Actuator(Pin::Arrangement const &pins);
+    Actuator(Actuator const &actuator);
     virtual ~Actuator();
     
 protected:
@@ -66,12 +67,15 @@ protected:
         Pin::Configuration const _configuration;
     };
     
-    std::map<Pin::Identifier, Pin *> _pins;
+    Pin::Set _pins;
+    Pin::Arrangement _pinout;
+    
     Scheduler _scheduler;
-    Pins const _pinout;
+    
     
     virtual void schedulerDequeuedEvent(Scheduler * const scheduler,
                                         Scheduler::Event * const event);
+    
 };
 
 #endif /* Actuator_hpp */

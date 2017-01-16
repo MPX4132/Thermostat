@@ -33,9 +33,10 @@ public:
     
     virtual Range range() const;
     
-    Thermometer(Actuator::Pins const &pins,
+    Thermometer(Pin::Arrangement const &pins,
                 Range const &range = std::make_pair(Temperature<float>(),
                                                     Temperature<float>()));
+    
     virtual ~Thermometer();
     
     

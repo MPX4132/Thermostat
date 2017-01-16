@@ -23,9 +23,16 @@ time(time)
 
 bool Actuator::ready() const
 {
-    for (std::pair<Pin::Identifier, Pin *> const &pair : this->_pins) {
-        if (!pair.second->ready()) return false;
+    for (Pin::Set::const_iterator iPin = this->_pins.begin(); iPin != this->_pins.end(); iPin++)
+    {
+        if (!iPin->second.ready()) return false;
     }
+    
+    // The iteration code below doesn't work because it copies the pin,
+    // effectively invalidating the instance pins and making them useless. 
+    /*for (std::pair<Pin::Identifier, Pin> const &pair : this->_pins) {
+        if (!pair.second.ready()) return false;
+    }*/
     return true;
 }
 
@@ -34,7 +41,7 @@ void Actuator::actuate(Actuator::Actions const &actions)
     for (Actuator::Action const &action : actions) {
         // Note: Count is optimal here due to the fact _pins is a map log(n).
         if (!_pins.count(action.pin)) continue; // If not ours, skip the pin.
-        Actuator::Event * actuatorEvent = new Actuator::Event(_pins[action.pin],
+        Actuator::Event * actuatorEvent = new Actuator::Event(&_pins[action.pin],
                                                               action.configuration,
                                                               action.time);
         this->_scheduler.enqueue(static_cast<Scheduler::Event *>(actuatorEvent));
@@ -68,20 +75,22 @@ void Actuator::schedulerDequeuedEvent(Scheduler * const scheduler,
     delete event; // Delete the dynamically created actuator event object
 }
 
-Actuator::Actuator(Actuator::Pins const &pins):
-_pinout(pins)
+Actuator::Actuator(Pin::Arrangement const &pins):
+_pinout(pins),
+_pins(Pin::MakeSet(pins))
 {
     this->_scheduler.delegate = static_cast<Scheduler::Delegate *>(this);
+}
+
+Actuator::Actuator(Actuator const &actuator):
+_pinout(actuator._pinout),
+_pins(actuator._pins)
+{
     
-    for (Pin::Identifier const &pin : pins) {
-        this->_pins[pin] = new Pin(pin);
-    }
 }
 
 Actuator::~Actuator()
 {
-    for (std::pair<Pin::Identifier, Pin *> const &pair : this->_pins) {
-        if (pair.second) delete pair.second; // Delete the pin object
-    }
+    
 }
 

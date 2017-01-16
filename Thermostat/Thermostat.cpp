@@ -25,9 +25,9 @@ Temperature<float> Thermostat::temperature()
 {
     Temperature<float> temperature = 0;
     
-    for (Thermometer &thermometer : this->thermometers)
+    for (Thermometer *thermometer : this->thermometers)
     {
-        temperature += thermometer.temperature();
+        temperature += thermometer->temperature();
     }
     
     if (this->thermometers.size()) temperature /= this->thermometers.size();
@@ -84,7 +84,7 @@ void Thermostat::_setHeater(bool const heat)
 
 int Thermostat::execute(Scheduler::Time const updateTime)
 {
-#ifdef DEBUG
+#if defined DEBUG && defined THERMOSTAT_LOGS
 #ifdef HARDWARE_INDEPENDENT
     std::cout << "[Thermostat <" << std::hex << this << ">] Running update (" << std::dec << updateTime << ")." << std::endl;
 #else
@@ -102,22 +102,38 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     // Check Actuator instance Pins are ready for operations.
     if (!this->ready()) return 2; // Pins not ready or unavailable (error code 2)
 
+    Temperature<float> const currentTemperature = this->temperature();
+    
+#if defined DEBUG && defined THERMOSTAT_LOGS
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << "[Thermostat <" << std::hex << this << ">] Currently " << std::dec << currentTemperature.value(Temperature<float>::Scale::Fahrenheit) << "F, target is " << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F." << std::endl;
+#else
+    Serial.print("[Thermostat <");
+    Serial.print((unsigned long) this, HEX);
+    Serial.print(">] Currently ");
+    Serial.print(currentTemperature.value());
+    Serial.print("F, target is ");
+    Serial.print(this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit));
+    Serial.println("F.");
+#endif
+#endif
+    
     switch (this->mode())
     {
         case Off: this->_standby();
             break;
             
-        case Cooling: this->_setCooler(this->temperature() > this->targetTemperature());
+        case Cooling: this->_setCooler(currentTemperature > this->targetTemperature());
             break;
             
-        case Heating: this->_setHeater(this->temperature() < this->targetTemperature());
+        case Heating: this->_setHeater(currentTemperature < this->targetTemperature());
             break;
             
         case Auto: {
-            if (this->temperature() > (this->targetTemperature() + this->_targetTemperatureThreshold)) {
+            if (currentTemperature > (this->targetTemperature() + this->_targetTemperatureThreshold)) {
                 this->_setCooler(true);
             } else
-            if (this->temperature() < (this->targetTemperature() - this->_targetTemperatureThreshold)) {
+            if (currentTemperature < (this->targetTemperature() - this->_targetTemperatureThreshold)) {
                 this->_setHeater(true);
             } else {
                 this->_standby();
@@ -138,8 +154,8 @@ int Thermostat::execute(Scheduler::Time const updateTime)
 // =============================================================================
 // Thermostat : Constructors & Destructor
 // =============================================================================
-Thermostat::Thermostat(Actuator::Pins const &pins,
-                       Thermometers &thermometers,
+Thermostat::Thermostat(Pin::Arrangement const &pins,
+                       Thermometers const &thermometers,
                        Scheduler::Time const executeTimeInterval):
 Actuator(pins),
 Scheduler::Daemon(0, executeTimeInterval),

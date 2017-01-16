@@ -35,14 +35,11 @@ void setup()
 
 void loop() 
 {
-
-    /*Thermostat::Thermometers thermometers = {Thermometer({14})};
-    Thermostat thermostat({14,12,13}, thermometers);
+    DHT22 thermometer(2); delay(1000); // Wait a second for module stabilization.
+    Thermostat thermostat({14,12,13}, {&thermometer});
 
     thermostat.setTargetTemperature(Temperature<float>(70));
-    thermostat.setMode(Thermostat::Mode::Cooling);*/
-
-    DHT22 thermometer(2);
+    thermostat.setMode(Thermostat::Mode::Cooling);
 
     /* while (WiFi.status() != WL_CONNECTED) {
 		Serial.print("Attempting connection to \"");
@@ -59,22 +56,9 @@ void loop()
 
     for (;;)
     {
-        delay(5000);
-
         // Scheduler at microsecond resolution.
         Scheduler::Time const now = micros();
-        //Scheduler::UpdateInstances(now);
-
-//#ifdef DEBUG
-        Serial.print("Attempting to contact sensor (");
-        Serial.print(now);
-        Serial.println(")...");
-//#endif
-
-        Temperature<float> temperature = thermometer.temperature();
-        Serial.print("Temperature is ");
-        Serial.print(temperature.value(Temperature<float>::Scale::Fahrenheit));
-        Serial.println("F");
+        Scheduler::UpdateInstances(now);
 
 #ifdef CYCLE_LOGS
         Serial.print("[Cycle] Completed at: ");

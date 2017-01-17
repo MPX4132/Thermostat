@@ -84,7 +84,7 @@ void Thermostat::_setHeater(bool const heat)
 
 int Thermostat::execute(Scheduler::Time const updateTime)
 {
-#if defined DEBUG && defined THERMOSTAT_LOGS
+/*#if defined DEBUG && defined THERMOSTAT_LOGS
 #ifdef HARDWARE_INDEPENDENT
     std::cout << "[Thermostat <" << std::hex << this << ">] Running update (" << std::dec << updateTime << ")." << std::endl;
 #else
@@ -94,7 +94,7 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     Serial.print(updateTime);
     Serial.println(").");
 #endif
-#endif
+#endif*/
     // Verify minimum pin count to properly operate an HVAC with relays (min 3).
     // Why 3? Well: Fan call pin, Cool call pin & Heat call pin.
     if (this->_pins.size() < 3) return 1; // Not enough control pins (error code 1)
@@ -108,13 +108,15 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     
 #if defined DEBUG && defined THERMOSTAT_LOGS
 #ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Thermostat <" << std::hex << this << ">] Currently " << std::dec << currentTemperature.value(Temperature<float>::Scale::Fahrenheit) << "F, target is " << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F." << std::endl;
+    std::cout << "[Thermostat <" << std::hex << this << ">] Currently " << std::dec << currentTemperature.value(Temperature<float>::Scale::Fahrenheit) << "F @" << updateTime << ", target is " << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F." << std::endl;
 #else
     Serial.print("[Thermostat <");
     Serial.print((unsigned long) this, HEX);
     Serial.print(">] Currently ");
     Serial.print(currentTemperature.value());
-    Serial.print("F, target is ");
+    Serial.print("F @");
+    Serial.print(updateTime);
+    Serial.print(", target is ");
     Serial.print(this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit));
     Serial.println("F.");
 #endif

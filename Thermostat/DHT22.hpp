@@ -17,6 +17,7 @@
 #include "Sensor.hpp"
 #include "Thermometer.hpp"
 #include "Temperature.hpp"
+#include "Scheduler.hpp"
 
 
 #ifdef HARDWARE_INDEPENDENT
@@ -25,9 +26,18 @@
 #include <Arduino.h>
 #endif
 
+// We must wait about 2 seconds after sensing again with DHT22.
+// NOTE: If called while in cooldown, cached values are returned.
+// The value defined below represents the 2-second wait.
+#define DHT22_TIMEOUT 2000 // In milliseconds
+
 class DHT22 : public Thermometer
 {
 public:
+    
+    // Overwrite Actuator's ready but still used within this method.
+    // Throttles sense calls since DHT22 must wait ~2s after reading.
+    bool ready() const;
     
     // Sense is a blocking method since the sensor must retrive
     // information in microseconds and delays could corrupt the data.
@@ -39,6 +49,8 @@ public:
     virtual ~DHT22();
     
 protected:
+    
+    Scheduler::Time _senseTime;
     
     bool _validData(Sensor::Data const &data);
     

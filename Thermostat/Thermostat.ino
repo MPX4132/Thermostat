@@ -4,7 +4,8 @@
 #include "Development.hpp"
 
 #ifndef HARDWARE_INDEPENDENT
-#include "ESP8266WiFi.h"
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
 #include "Thermostat.hpp"
 #include "Scheduler.hpp"
 #include "Sensor.hpp"
@@ -27,6 +28,9 @@ char const * const WIFI_PASS = "PASSHERE";
 DHT22 * thermometer; // Will point to the thermometer (DHT22) instance.
 Thermostat * thermostat; // Will point to the thermostat instance.
 
+// Prepare the web server object with typical port 80 for HTTP requests.
+ESP8266WebServer server(80);
+
 void setup() 
 {
     Serial.begin(115200);
@@ -43,6 +47,8 @@ void setup()
     thermostat->setTargetTemperature(Temperature<float>(72));
     thermostat->setMode(Thermostat::Mode::Auto);
 
+
+    // Begin WiFi configuration and do not continue until we've connected successfully.
     Serial.println("[WIFI] Setting radio configuration, please wait...");
 	WiFi.begin(WIFI_SSID, WIFI_PASS); // Configure and activate WIFI for connection.
 
@@ -54,7 +60,7 @@ void setup()
         Serial.print("\" @ ");
         Serial.print(millis());
         // Give it a bit more time to attempt connecting.
-        for (byte i = 0; i < 3; i++) {Serial.print("."); delay(1000);}
+        for (byte i = 0; i < 3; i++) {delay(1000); Serial.print(".");}
         Serial.println("");
     }
 
@@ -62,21 +68,39 @@ void setup()
     Serial.print(WIFI_SSID);
     Serial.print("\" with address ");
     Serial.println(WiFi.localIP());
+
+
+    // Begin web server for serving thermostat related data & operations.
+    server.on("/", []() {
+        String response;
+        response += "[{\"T\":";
+        response += thermometer->temperature().value();
+        response += ",\"H\":";
+        response += thermometer->humidity();
+        response += "}]";
+        server.send(200, "application/json", response);
+    });
+
+    server.begin();
 }
 
 void loop()
 {
-
     // Scheduler at microsecond resolution.
     Scheduler::Time const now = micros();
     Scheduler::UpdateInstances(now);
+
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        Serial.println("[WIFI] Radio is disconnected..."); return;
+    }
+
+    server.handleClient();
 
 #ifdef CYCLE_LOGS
     Serial.print("[Cycle] Completed at: ");
     Serial.println(now);
 #endif
-
-    if (WiFi.status() != WL_CONNECTED) Serial.println("[WIFI] Radio is disconnected...");
 }
 #endif
 

@@ -27,7 +27,8 @@ public:
     {
         Internal,
         Celsius,
-        Fahrenheit
+        Fahrenheit,
+        Kelvin
     };
     
     bool operator==(Temperature<NumericType> const &other) const
@@ -183,6 +184,25 @@ public:
         
         // If no match was found, return the value that was given.
         return value;
+    }
+    
+    static Temperature<NumericType> Make(NumericType const value, char const scale)
+    {
+        switch (scale) {
+            case 'f': return Temperature<NumericType>(value, Fahrenheit);
+                break;
+            
+            case 'c': return Temperature<NumericType>(value, Celsius);
+                break;
+                
+            case 'k': return Temperature<NumericType>(value, Kelvin);
+                break;
+                
+            default:
+                break;
+        }
+        
+        return Temperature<NumericType>();
     }
     
     Temperature(Temperature<NumericType> const &temperature):

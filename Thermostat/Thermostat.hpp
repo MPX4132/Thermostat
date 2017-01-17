@@ -38,8 +38,8 @@ public:
     enum Mode
     {
         Off,
-        Cooling,
-        Heating,
+        Cool,
+        Heat,
         Auto
     };
     

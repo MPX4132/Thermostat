@@ -44,8 +44,9 @@ void setup()
     // NOTE: Thermostat objects rely on the Scheduler class's updates,
     // meaning nothing will execute until the Scheduler class begins to update
     // all its instances, meaning it's also safe to set these values here.
-    thermostat->setTargetTemperature(Temperature<float>(72));
-    thermostat->setMode(Thermostat::Mode::Auto);
+    // Setting these via the web parameter interface.
+    //thermostat->setTargetTemperature(Temperature<float>(72));
+    //thermostat->setMode(Thermostat::Mode::Auto);
 
 
     // Begin WiFi configuration and do not continue until we've connected successfully.
@@ -78,6 +79,61 @@ void setup()
         response += ",\"H\":";
         response += thermometer->humidity();
         response += "}]";
+        server.send(200, "application/json", response);
+    });
+
+    server.on("/control", []() {
+        if (!server.args())
+        {
+            server.send(200, "text/plain", "Thermostat's controller interface."); return;
+        }
+
+        String response; // Prepare response variable.
+
+        String const modeArgument = server.arg("mode");
+        if (modeArgument.length())
+        {
+            Thermostat::Mode const pastMode = thermostat->mode();
+
+            if (modeArgument.equals("auto")) thermostat->setMode(Thermostat::Mode::Auto);
+            if (modeArgument.equals("cool")) thermostat->setMode(Thermostat::Mode::Cool);
+            if (modeArgument.equals("heat")) thermostat->setMode(Thermostat::Mode::Heat);
+            if (modeArgument.equals("off")) thermostat->setMode(Thermostat::Mode::Off);
+
+            if (pastMode != thermostat->mode()) response += " >Mode: " + modeArgument;
+        }
+
+        String tempArgument = server.arg("temp");
+        if (tempArgument.length())
+        {
+            // Get the unit from the passed in temperature.
+            byte scalePosition = tempArgument.indexOf("f");
+            if (scalePosition < 0) scalePosition = tempArgument.indexOf("c");
+            if (scalePosition < 0) scalePosition = tempArgument.indexOf("k");
+
+            if (scalePosition > 0) // Check if it was found after 0, otherwise it's malformed.
+            {
+                char const scale = tempArgument[scalePosition];
+
+                tempArgument.remove(scalePosition); // Remove scale to parse value.
+                float const value = tempArgument.toFloat(); // Parse value, 0 COULD be failure.
+
+                // Check if it's a proper value meaning it must not be zero, however,
+                // if it is 0 we must check it indeed was set and isn't an issue with parsing.
+                if (value || (tempArgument.length() == 1 && tempArgument[0] == '0'))
+                {
+                    thermostat->setTargetTemperature(Temperature<float>::Make(value, scale));
+                    response += " >Temp: ";
+                    response += value;
+                    response += scale;
+                }
+            }
+        }
+
+        //String const typeArgument = server.arg("type");
+
+        if (!response.length()) response += "[No valid parameters received!]";
+
         server.send(200, "application/json", response);
     });
 

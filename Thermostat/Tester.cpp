@@ -15,29 +15,36 @@
 #ifdef HARDWARE_INDEPENDENT
 #include <iostream>
 
-Scheduler::Time micros() {
+Scheduler::Time micros();
+
+DHT22 * thermometer;
+Thermostat * thermostat;
+
+void setup()
+{
+    thermometer = new DHT22(2);
+    thermostat = new Thermostat({14,12,13}, {thermometer});
+    
+    thermostat->setTargetTemperature(Temperature<float>(72));
+    thermostat->setMode(Thermostat::Mode::Auto);
+}
+
+void loop()
+{
+    Scheduler::Time const now = micros();
+    Scheduler::UpdateInstances(now);
+}
+
+int main(int argc, const char * argv[]) {
+    setup();
+    for (;;) loop();
+    return 0;
+}
+
+Scheduler::Time micros()
+{
     static Scheduler::Time fakeTime = 0;
     return fakeTime++;
 }
 
-
-int main(int argc, const char * argv[]) {
-    DHT22 thermometer(2);
-    Thermostat thermostat({14,12,13}, {&thermometer});
-    
-    thermostat.setTargetTemperature(Temperature<float>(76), 0);
-    thermostat.setMode(Thermostat::Mode::Cooling);
-    
-    for (;;) {
-        // Scheduler at microsecond resolution.
-        Scheduler::Time const now = micros();
-        Scheduler::UpdateInstances(now);
-        
-#ifdef CYCLE_LOGS
-        std::cout << "[Cycle] Completed at: " << std::dec << now << std::endl;
-#endif
-    }
-    
-    return 0;
-}
 #endif

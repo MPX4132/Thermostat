@@ -27,10 +27,10 @@
 #endif
 
 // Uncomment/Comment the following macros to add/remove debug messages.
-//#define PIN_LOGS
 //#define CYCLE_LOGS
-//#define SCHEDULER_LOGS
 //#define RTTI_LOGS
+//#define SCHEDULER_LOGS
+//#define PIN_LOGS
 //#define DHT22_LOGS
 #define THERMOSTAT_LOGS
 

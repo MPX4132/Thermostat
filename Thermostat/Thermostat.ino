@@ -1,18 +1,18 @@
 // This HVAC control system is designed to run on low resource systems.
 
 
-//#include "ESP8266WiFi.h"
 #include "Development.hpp"
+
+#ifndef HARDWARE_INDEPENDENT
+#include "ESP8266WiFi.h"
 #include "Thermostat.hpp"
 #include "Scheduler.hpp"
 #include "Sensor.hpp"
 #include "DHT22.hpp"
 
-#ifndef HARDWARE_INDEPENDENT
-
 #warning Remember to remove your access point data before commiting!
-const char *WIFI_SSID = "SSIDHERE";
-const char *WIFI_PASS = "PASSHERE";
+char const * const WIFI_SSID = "SSIDHERE";
+char const * const WIFI_PASS = "PASSHERE";
 
 // NOTE: If objects are declared here from other files, and they've got 
 // static members such as a static std::map member (like Pin), initialization 
@@ -24,48 +24,59 @@ const char *WIFI_PASS = "PASSHERE";
 // This is fixed by having the instance in a function, which runs after
 // the static code has been initialized, such as Thermostat in loop.
 
+DHT22 * thermometer; // Will point to the thermometer (DHT22) instance.
+Thermostat * thermostat; // Will point to the thermostat instance.
+
 void setup() 
 {
     Serial.begin(115200);
     Serial.println("Thermostat starting up...");
-   
-	//WiFi.setOutputPower(0); // Temporary workaround for ESP-1 to ESP-6.
-	//WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+    // We'll start all thermostat related objects first to have them ready.
+    thermometer = new DHT22(2); // Should stabilize while waiting for WIFI to connect.
+    thermostat = new Thermostat({14,12,13}, {thermometer});
+
+    // Set some test Thermostat temerature parameters to demo the objects.
+    // NOTE: Thermostat objects rely on the Scheduler class's updates,
+    // meaning nothing will execute until the Scheduler class begins to update
+    // all its instances, meaning it's also safe to set these values here.
+    thermostat->setTargetTemperature(Temperature<float>(72));
+    thermostat->setMode(Thermostat::Mode::Auto);
+
+    Serial.println("[WIFI] Setting radio configuration, please wait...");
+	WiFi.begin(WIFI_SSID, WIFI_PASS); // Configure and activate WIFI for connection.
+
+    // Check WIFI connection state, and wait if it's not yet ready.
+    Serial.println("[WIFI] Checking connection state...");
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.print("[WIFI] Waiting for connection to \"");
+        Serial.print(WIFI_SSID);
+        Serial.print("\" @ ");
+        Serial.print(millis());
+        // Give it a bit more time to attempt connecting.
+        for (byte i = 0; i < 3; i++) {Serial.print("."); delay(1000);}
+        Serial.println("");
+    }
+
+    Serial.print("[WIFI] Connected to \"");
+    Serial.print(WIFI_SSID);
+    Serial.print("\" with address ");
+    Serial.println(WiFi.localIP());
 }
 
-void loop() 
+void loop()
 {
-    DHT22 thermometer(2); delay(1000); // Wait a second for module stabilization.
-    Thermostat thermostat({14,12,13}, {&thermometer});
 
-    thermostat.setTargetTemperature(Temperature<float>(76), 0);
-    thermostat.setMode(Thermostat::Mode::Auto);
-
-    /* while (WiFi.status() != WL_CONNECTED) {
-		Serial.print("Attempting connection to \"");
-		Serial.print(WIFI_SSID);
-		Serial.print("\"... | Uptime ");
-		Serial.println(millis());
-		delay(5000); // Wait ~5 seconds.
-	}
-
-	Serial.print("Connected to \"");
-	Serial.print(WIFI_SSID);
-	Serial.print("\" with address ");
-	Serial.println(WiFi.localIP()); */
-
-    for (;;)
-    {
-        // Scheduler at microsecond resolution.
-        Scheduler::Time const now = micros();
-        Scheduler::UpdateInstances(now);
+    // Scheduler at microsecond resolution.
+    Scheduler::Time const now = micros();
+    Scheduler::UpdateInstances(now);
 
 #ifdef CYCLE_LOGS
-        Serial.print("[Cycle] Completed at: ");
-        Serial.println(now);
+    Serial.print("[Cycle] Completed at: ");
+    Serial.println(now);
 #endif
-        wdt_reset(); // Notify watchdog microcontroller hasn't crashed.
-    }
+
+    if (WiFi.status() != WL_CONNECTED) Serial.println("[WIFI] Radio is disconnected...");
 }
 #endif
 

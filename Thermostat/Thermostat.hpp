@@ -66,7 +66,7 @@ public:
     virtual Temperature<float> temperature();
     
     virtual Temperature<float> targetTemperature() const;
-    virtual void setTargetTemperature(Temperature<float> const targetTemperature, float const targetTemperatureThreshold = 3);
+    virtual void setTargetTemperature(Temperature<float> const targetTemperature, float const targetTemperatureThreshold = 1);
     
     Measurement measurementType() const;
     void setMeasurementType(Measurement const measurementType = TemperatureUnit);

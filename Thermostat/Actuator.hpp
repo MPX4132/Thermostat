@@ -40,7 +40,6 @@ public:
     };
     
     typedef std::vector<Action> Actions;
-    //typedef std::vector<Pin::Identifier> Pins;
     
     virtual bool ready() const;
     virtual void actuate(Actions const &actions);

@@ -38,8 +38,8 @@ public:
     enum Mode
     {
         Off,
-        Cool,
         Heat,
+        Cool,
         Auto
     };
     
@@ -66,7 +66,9 @@ public:
     virtual Temperature<float> temperature();
     
     virtual Temperature<float> targetTemperature() const;
-    virtual void setTargetTemperature(Temperature<float> const targetTemperature, float const targetTemperatureThreshold = 1);
+    virtual void setTargetTemperature(Temperature<float> const targetTemperature,
+                                      // About a degree (F/C) of threshold
+                                      float const targetTemperatureThreshold = 1);
     
     Measurement measurementType() const;
     void setMeasurementType(Measurement const measurementType = TemperatureUnit);

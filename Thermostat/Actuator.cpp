@@ -76,15 +76,15 @@ void Actuator::schedulerDequeuedEvent(Scheduler * const scheduler,
 }
 
 Actuator::Actuator(Pin::Arrangement const &pins):
-_pinout(pins),
-_pins(Pin::MakeSet(pins))
+_pins(Pin::MakeSet(pins)),
+_pinout(pins)
 {
     this->_scheduler.delegate = static_cast<Scheduler::Delegate *>(this);
 }
 
 Actuator::Actuator(Actuator const &actuator):
-_pinout(actuator._pinout),
-_pins(actuator._pins)
+_pins(actuator._pins),
+_pinout(actuator._pinout)
 {
     
 }

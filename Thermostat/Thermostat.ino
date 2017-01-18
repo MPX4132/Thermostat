@@ -93,6 +93,8 @@ void setup()
         response += thermometer->humidity();
         response += "},\"mode\":";
         response += thermostat->mode();
+        response += ",\"status\":";
+        response += thermostat->status();
         response += "}";
         server.send(200, "application/json", response);
     });
@@ -126,9 +128,9 @@ void setup()
         if (tempArgument.length())
         {
             // Get the unit from the passed in temperature.
-            short scalePosition = tempArgument.indexOf("F");
+            short scalePosition = tempArgument.indexOf("K");
+            if (scalePosition < 0) scalePosition = tempArgument.indexOf("F");
             if (scalePosition < 0) scalePosition = tempArgument.indexOf("C");
-            if (scalePosition < 0) scalePosition = tempArgument.indexOf("K");
             
             if (scalePosition > 0) // Check if it was found after 0, otherwise it's malformed.
             {
@@ -167,7 +169,8 @@ void loop()
     
     if (WiFi.status() != WL_CONNECTED)
     {
-        Serial.println("[WIFI] Radio is disconnected..."); return;
+        Serial.print("[WIFI] Radio is down, time is ");
+        Serial.println(now); return; // Can't handle clients.
     }
     
     server.handleClient();

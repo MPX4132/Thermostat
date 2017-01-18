@@ -43,6 +43,14 @@ public:
         Auto
     };
     
+    enum Status
+    {
+        Standby,
+        Heating,
+        Cooling,
+        Stasis
+    };
+    
     enum Measurement
     {
         TemperatureUnit,	// Control based on temperature
@@ -61,6 +69,8 @@ public:
     // ================================================================
     virtual Mode mode() const;
     void setMode(const Mode mode = Off);
+    
+    Status status() const;
     
     // This method returns the average temperature of the thermometers.
     virtual Temperature<float> temperature();
@@ -88,6 +98,7 @@ protected:
     Temperature<float> _targetTemperature;
     float _targetTemperatureThreshold;
     Measurement _measurmentType;
+    Status _status;
     Mode _mode;
     
     // This scheduler shadows the Actuator scheduler, which is what we
@@ -96,9 +107,9 @@ protected:
     // the Actuator would try to delete the auto-generated instance.
     Scheduler _scheduler;
     
-    void _standby();
-    void _setCooler(bool const cool);
-    void _setHeater(bool const heat);
+    Status _standby(Status const status = Standby);
+    Status _setCooler(bool const cool);
+    Status _setHeater(bool const heat);
     
     // ================================================================
     // Scheduler::Event Methods

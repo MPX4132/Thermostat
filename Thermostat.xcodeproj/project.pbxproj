@@ -50,7 +50,7 @@
 		C3584C441E271C000039D951 /* Thermostat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Thermostat.cpp; sourceTree = "<group>"; };
 		C3584C451E271C000039D951 /* Thermostat.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Thermostat.hpp; sourceTree = "<group>"; };
 		C3584C461E271C000039D951 /* Tester.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tester.cpp; sourceTree = "<group>"; };
-		C38D32B01E236AAF00E5B10B /* WiFiThermostat.ino */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; path = WiFiThermostat.ino; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		C38D32B01E236AAF00E5B10B /* Thermostat.ino */ = {isa = PBXFileReference; lastKnownFileType = text; path = Thermostat.ino; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		C3F8754E1E2C168D00020493 /* DHT22.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DHT22.cpp; sourceTree = "<group>"; usesTabs = 0; };
 		C3F8754F1E2C168D00020493 /* DHT22.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DHT22.hpp; sourceTree = "<group>"; usesTabs = 0; };
 		C3FFC2441DD7B56E00C5B641 /* Thermostat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Thermostat; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -110,7 +110,7 @@
 				C3F8754E1E2C168D00020493 /* DHT22.cpp */,
 				C3F8754F1E2C168D00020493 /* DHT22.hpp */,
 				C3584C461E271C000039D951 /* Tester.cpp */,
-				C38D32B01E236AAF00E5B10B /* WiFiThermostat.ino */,
+				C38D32B01E236AAF00E5B10B /* Thermostat.ino */,
 			);
 			path = Thermostat;
 			sourceTree = "<group>";

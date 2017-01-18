@@ -13,12 +13,17 @@
 // =============================================================================
 Thermostat::Mode Thermostat::mode() const
 {
-    return _mode;
+    return this->_mode;
 }
 
 void Thermostat::setMode(const Thermostat::Mode mode)
 {
     _mode = mode;
+}
+
+Thermostat::Status Thermostat::status() const
+{
+    return this->_status;
 }
 
 Temperature<float> Thermostat::temperature()
@@ -31,6 +36,7 @@ Temperature<float> Thermostat::temperature()
     }
     
     if (this->thermometers.size()) temperature /= this->thermometers.size();
+    
     return temperature;
 }
 
@@ -42,8 +48,8 @@ Temperature<float> Thermostat::targetTemperature() const
 void Thermostat::setTargetTemperature(Temperature<float> const targetTemperature,
                                       float const targetTemperatureThreshold)
 {
-    _targetTemperatureThreshold = targetTemperatureThreshold;
-    _targetTemperature = targetTemperature;
+    this->_targetTemperatureThreshold = targetTemperatureThreshold;
+    this->_targetTemperature = targetTemperature;
 }
 
 Thermostat::Measurement Thermostat::measurementType() const
@@ -56,31 +62,35 @@ void Thermostat::setMeasurementType(Thermostat::Measurement const measurementTyp
     this->_measurmentType = measurementType;
 }
 
-void Thermostat::_standby()
+Thermostat::Status Thermostat::_standby(Thermostat::Status const status)
 {
     this->actuate({ // Toggle all pins to 0, or release all relays, immediately.
         {this->_pinout[0], {Pin::Mode::Output, 0}, 0},
         {this->_pinout[1], {Pin::Mode::Output, 0}, 0},
         {this->_pinout[2], {Pin::Mode::Output, 0}, 0}
     });
+    
+    return status;
 }
 
-void Thermostat::_setCooler(bool const cool)
+Thermostat::Status Thermostat::_setCooler(bool const cool)
 {
     this->actuate({ // Cool & Fan on if above target temp, off otherwise.
         {this->_pinout[0], {Pin::Mode::Output, cool}, 0},
         {this->_pinout[1], {Pin::Mode::Output, cool}, 0},
         {this->_pinout[2], {Pin::Mode::Output, 0}, 0}
     });
+    return cool? Thermostat::Status::Cooling : Thermostat::Status::Standby;
 }
 
-void Thermostat::_setHeater(bool const heat)
+Thermostat::Status Thermostat::_setHeater(bool const heat)
 {
     this->actuate({ // Heat & Fan on if below target temp, off otherwise.
         {this->_pinout[0], {Pin::Mode::Output, heat}, 0},
         {this->_pinout[1], {Pin::Mode::Output, 0}, 0},
         {this->_pinout[2], {Pin::Mode::Output, heat}, 0}
     });
+    return heat? Thermostat::Status::Heating : Thermostat::Status::Standby;
 }
 
 int Thermostat::execute(Scheduler::Time const updateTime)
@@ -98,15 +108,15 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     
 #if defined DEBUG && defined THERMOSTAT_LOGS
 #ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Thermostat <" << std::hex << this << ">] Currently " << std::dec << currentTemperature.value(Temperature<float>::Scale::Fahrenheit) << "F @" << updateTime << ", target is " << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F." << std::endl;
+    std::cout << "[Thermostat <" << std::hex << this << ">] Currently " << std::dec << currentTemperature.value(Temperature<float>::Scale::Fahrenheit) << "F at " << updateTime << ", temperature set at " << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F." << std::endl;
 #else
     Serial.print("[Thermostat <");
     Serial.print((unsigned long) this, HEX);
     Serial.print(">] Currently ");
-    Serial.print(currentTemperature.value());
-    Serial.print("F @");
+    Serial.print(currentTemperature.value(Temperature<float>::Scale::Fahrenheit));
+    Serial.print("F at ");
     Serial.print(updateTime);
-    Serial.print(", target is ");
+    Serial.print(", temperature set at ");
     Serial.print(this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit));
     Serial.println("F.");
 #endif
@@ -114,27 +124,27 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     
     switch (this->mode())
     {
-        case Off: this->_standby();
+        case Off: this->_status = this->_standby();
             break;
             
-        case Cool: this->_setCooler(currentTemperature > this->targetTemperature());
+        case Cool: this->_status = this->_setCooler(currentTemperature > this->targetTemperature());
             break;
             
-        case Heat: this->_setHeater(currentTemperature < this->targetTemperature());
+        case Heat: this->_status = this->_setHeater(currentTemperature < this->targetTemperature());
             break;
             
         case Auto: {
             if (currentTemperature > (this->targetTemperature() + this->_targetTemperatureThreshold)) {
-                this->_setCooler(true);
+                this->_status = this->_setCooler(true);
             } else
             if (currentTemperature < (this->targetTemperature() - this->_targetTemperatureThreshold)) {
-                this->_setHeater(true);
+                this->_status = this->_setHeater(true);
             } else {
-                this->_standby();
+                this->_status = this->_standby(Thermostat::Status::Stasis);
             }
         }   break;
             
-        default: this->_standby(); // Fuck you too.
+        default: this->_status = this->_standby(); // Fuck you too.
             break;
     }
     
@@ -155,6 +165,7 @@ Actuator(pins),
 Scheduler::Daemon(0, executeTimeInterval),
 thermometers(thermometers),
 _measurmentType(Thermostat::Measurement::TemperatureUnit),
+_status(Thermostat::Status::Standby),
 _mode(Thermostat::Mode::Off)
 {
     // targetTemp, targetTempThresh & _scheduler are fine auto-initialized.

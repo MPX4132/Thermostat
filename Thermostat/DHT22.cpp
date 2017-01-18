@@ -47,22 +47,27 @@ Sensor::Data DHT22::sense() {
     dataPin.setMode(Pin::Mode::Output);
     
     // ============================================================
-    // Pull down for 1000us, then up for 40us to wake DHT22
+    // Pull down for 1000us, then up for 20us to wake DHT22
     // Lower values cause failure sporadically, so these are fine.
     // ============================================================
     dataPin.setState(0);
     delayMicroseconds(1000);
     
     dataPin.setState(1);
-    delayMicroseconds(40);
+    delayMicroseconds(20);
     
     // ============================================================
     // Await response from the DHT22, 80us down followed by 80us up
     // ============================================================
     dataPin.setMode(Pin::Mode::Input);
-    delayMicroseconds(40); // Wait a bit for the sensor to reply
+    delayMicroseconds(40); // Wait a bit for the sensor to reply.
+    
     
     // NOTE: POLING CAN BEGIN HERE WITH BLOCKING WAITS.
+    // Wait till output high signal is pulled down by MCU.
+    // This needs to be protected for potential hangs.
+    // while (dataPin.state()) continue;
+    
     
     // Check for low, if up return nothing.
     if (dataPin.state()) {
@@ -77,6 +82,11 @@ Sensor::Data DHT22::sense() {
     }
     delayMicroseconds(80);
     
+    // Wait for the MCU to repeat the down part of down-up signal.
+    // This needs to be protected for potential hangs.
+    // while (!dataPin.state()) continue;
+    
+    
     // Check for high, if low, return nothing.
     if (!dataPin.state()) {
 #if defined DEBUG && defined DHT22_LOGS
@@ -90,6 +100,10 @@ Sensor::Data DHT22::sense() {
     }
     delayMicroseconds(40);
     
+    // Wait for the MCU to repeat the up part of down-up signal.
+    // This needs to be protected for potential hangs.
+    //while (dataPin.state()) continue;
+    
     // Get 40 bits of data from the sensor.
     for (Sensor::Byte &byte : data)
     {
@@ -97,10 +111,12 @@ Sensor::Data DHT22::sense() {
         for (Sensor::Byte bit = 0; bit < 8; bit++)
         {
             // Wait for high signal signifying next bit started.
+            // WARNING: This needs to be protected for potential hangs.
             while (!dataPin.state()) continue; // NOTE: BLOCKING WAIT
             unsigned short const timeA = micros();
 
             // Wait for low signal, signifying start of next bit.
+            // WARNING: This needs to be protected for potential hangs.
             while (dataPin.state()) continue; // NOTE: BLOCKING WAIT
             unsigned short const timeB = micros();
             
@@ -178,9 +194,9 @@ Sensor::Data DHT22::sense() {
 #ifndef HARDWARE_INDEPENDENT
     else
     {
-        Serial.println("[DHT22 <");
+        Serial.print("[DHT22 <");
         Serial.print((unsigned long) this);
-        Serial.println(">] Data is corrupted!");
+        Serial.println(">] ERROR: Data is corrupted!");
     }
 #endif
 #endif

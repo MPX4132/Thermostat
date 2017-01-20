@@ -111,6 +111,8 @@ protected:
     Status _setCooler(bool const cool);
     Status _setHeater(bool const heat);
     
+    void _reflectUpdates();
+    
     // ================================================================
     // Scheduler::Event Methods
     // ================================================================

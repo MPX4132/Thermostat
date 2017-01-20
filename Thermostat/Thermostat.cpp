@@ -19,6 +19,9 @@ Thermostat::Mode Thermostat::mode() const
 void Thermostat::setMode(const Thermostat::Mode mode)
 {
     _mode = mode;
+    
+    // To have the actuator immediately respond.
+    this->_reflectUpdates();
 }
 
 Thermostat::Status Thermostat::status() const
@@ -50,6 +53,9 @@ void Thermostat::setTargetTemperature(Temperature<float> const targetTemperature
 {
     this->_targetTemperatureThreshold = targetTemperatureThreshold;
     this->_targetTemperature = targetTemperature;
+    
+    // To have the actuator immediately respond.
+    this->_reflectUpdates();
 }
 
 Thermostat::Measurement Thermostat::measurementType() const
@@ -60,6 +66,9 @@ Thermostat::Measurement Thermostat::measurementType() const
 void Thermostat::setMeasurementType(Thermostat::Measurement const measurementType)
 {
     this->_measurmentType = measurementType;
+    
+    // To have the actuator immediately respond.
+    this->_reflectUpdates();
 }
 
 Thermostat::Status Thermostat::_standby(Thermostat::Status const status)
@@ -91,6 +100,11 @@ Thermostat::Status Thermostat::_setHeater(bool const heat)
         {this->_pinout[2], {Pin::Mode::Output, heat}, 0}
     });
     return heat? Thermostat::Status::Heating : Thermostat::Status::Standby;
+}
+
+void Thermostat::_reflectUpdates()
+{
+    this->setExecuteTime(0); // Update ASAP.
 }
 
 int Thermostat::execute(Scheduler::Time const updateTime)

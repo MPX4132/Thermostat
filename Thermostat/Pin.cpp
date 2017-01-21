@@ -125,7 +125,7 @@ Pin::Set Pin::AllocateSet(Pin::Arrangement const &pins)
 
 void Pin::DeallocateSet(Pin::Set const &pins)
 {
-    for (std::pair<Pin::Identifier, Pin *> const &pin : pins)
+    for (Pin::Set::value_type const &pin : pins)
     {
         delete pin.second;
     }

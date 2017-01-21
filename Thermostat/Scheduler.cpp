@@ -69,7 +69,31 @@ bool Scheduler::Daemon::finished() const
 
 Scheduler::Time Scheduler::Daemon::_executeTimeUpdate(Scheduler::Time const updateTime)
 {
-    this->setExecuteTime(updateTime + this->executeTimeInterval());
+    Scheduler::Time nextUpdateTime = updateTime + this->executeTimeInterval();
+    
+    // Due to the damned max macro, I must use this macro bullshit for limits.
+    // You could argue I could do unsigned x - 1 to get max, but fuck that, it's ugly.
+    
+#ifdef max
+#pragma push_macro("max")
+#undef max
+#define RESTORE_MAX_DEFINE
+#endif
+    if (updateTime < nextUpdateTime)
+    {
+        this->setExecuteTime(nextUpdateTime);
+    } else
+    if (updateTime == std::numeric_limits<Scheduler::Time>::max())
+    {
+        this->setExecuteTime(this->executeTimeInterval());
+    } else
+    {
+        this->setExecuteTime(std::numeric_limits<Scheduler::Time>::max());
+    }
+#ifdef RESTORE_MAX_DEFINE
+#pragma pop_macro("max")
+#endif
+    
     return this->executeTime();
 }
 
@@ -345,6 +369,8 @@ void Scheduler::_processEventsForTime(Scheduler::Time const time)
     {
         for (Scheduler::Event * const event : task.events)
         {
+            // Event instances are stored sorted in std::map incrementally,
+            // meaning we can stop once the instances' execution time is above time.
             if (event->executeTime() > time) break;
             if (this->delegate) this->delegate->schedulerStartingEvent(this, event);
             

@@ -11,6 +11,7 @@
 
 #include <set>
 #include <map>
+#include <limits>
 #include "Development.hpp"
 #include "Identifiable.hpp"
 

@@ -24,8 +24,8 @@ char const * const WIFI_PASS = "PASSHERE";
 // static, meaning it will be initialized with the static code in this
 // translational unit (file), and this could run before the other
 // translational unit's static code is initialized, such as the map member.
-// This is fixed by having the instance in a function, which runs after
-// the static code has been initialized, such as Thermostat in loop.
+// This is fixed by having the instance in a function or having it be
+// dynamically initialized, both which occur after static code has been initialized.
 
 DHT22 * thermometer; // Will point to the thermometer (DHT22) instance.
 Thermostat * thermostat; // Will point to the thermostat instance.
@@ -40,15 +40,15 @@ void setup()
 {
     Serial.begin(115200);
     Serial.println("Thermostat starting up...");
-    
+
     // We'll start all thermostat related objects first to have them ready.
     thermometer = new DHT22(2); // Should stabilize while waiting for WIFI to connect.
-    thermostat = new Thermostat({14,12,13}, {thermometer});    
-    
+    thermostat = new Thermostat({14,12,13}, {thermometer});
+
     // Begin WiFi configuration and do not continue until we've connected successfully.
     Serial.println("[WIFI] Setting radio configuration, please wait...");
     WiFi.begin(WIFI_SSID, WIFI_PASS); // Configure and activate WIFI for connection.
-    
+
     // Check WIFI connection state, and wait if it's not yet ready.
     Serial.println("[WIFI] Checking connection state...");
     while (WiFi.status() != WL_CONNECTED) {

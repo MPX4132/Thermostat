@@ -28,8 +28,8 @@ bool Actuator::ready() const
     {
         if (!iPin->second.ready()) return false;
     }*/
-    
-    for (std::pair<Pin::Identifier, Pin *> const &pair : this->_pins)
+
+    for (Pin::Set::value_type const &pair : this->_pins)
     {
         if (!pair.second->ready()) return false;
     }

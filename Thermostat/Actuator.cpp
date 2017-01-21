@@ -23,16 +23,16 @@ time(time)
 
 bool Actuator::ready() const
 {
-    for (Pin::Set::const_iterator iPin = this->_pins.begin(); iPin != this->_pins.end(); iPin++)
+    // The loop below was used for copy pins, when copies would transfer ownership to other pins.
+    /*for (Pin::Set::const_iterator iPin = this->_pins.begin(); iPin != this->_pins.end(); iPin++)
     {
         if (!iPin->second.ready()) return false;
-    }
-    
-    // The iteration code below doesn't work because it copies the pin,
-    // effectively invalidating the instance pins and making them useless. 
-    /*for (std::pair<Pin::Identifier, Pin> const &pair : this->_pins) {
-        if (!pair.second.ready()) return false;
     }*/
+    
+    for (std::pair<Pin::Identifier, Pin *> const &pair : this->_pins)
+    {
+        if (!pair.second->ready()) return false;
+    }
     return true;
 }
 
@@ -41,7 +41,7 @@ void Actuator::actuate(Actuator::Actions const &actions)
     for (Actuator::Action const &action : actions) {
         // Note: Count is optimal here due to the fact _pins is a map log(n).
         if (!_pins.count(action.pin)) continue; // If not ours, skip the pin.
-        Actuator::Event * actuatorEvent = new Actuator::Event(&_pins[action.pin],
+        Actuator::Event * actuatorEvent = new Actuator::Event(_pins[action.pin], //&_pins[action.pin],
                                                               action.configuration,
                                                               action.time);
         this->_scheduler.enqueue(static_cast<Scheduler::Event *>(actuatorEvent));
@@ -76,7 +76,7 @@ void Actuator::schedulerDequeuedEvent(Scheduler * const scheduler,
 }
 
 Actuator::Actuator(Pin::Arrangement const &pins):
-_pins(Pin::MakeSet(pins)),
+_pins(Pin::AllocateSet(pins)),
 _pinout(pins)
 {
     this->_scheduler.delegate = static_cast<Scheduler::Delegate *>(this);
@@ -91,6 +91,6 @@ _pinout(actuator._pinout)
 
 Actuator::~Actuator()
 {
-    
+    Pin::DeallocateSet(this->_pins);
 }
 

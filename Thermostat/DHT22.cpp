@@ -43,7 +43,8 @@ Sensor::Data DHT22::sense() {
     Sensor::Data data(5); // Buffer for data (40-bit)
     
     // Prepare data pin for operation.
-    Pin &dataPin = this->_pins[this->_pinout[0]];
+    //Pin &dataPin = this->_pins[this->_pinout[0]];
+    Pin &dataPin = *(this->_pins[this->_pinout[0]]);
     dataPin.setMode(Pin::Mode::Output);
     
     // ============================================================

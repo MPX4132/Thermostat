@@ -43,16 +43,7 @@ void setup()
     
     // We'll start all thermostat related objects first to have them ready.
     thermometer = new DHT22(2); // Should stabilize while waiting for WIFI to connect.
-    thermostat = new Thermostat({14,12,13}, {thermometer});
-    
-    // Set some test Thermostat temerature parameters to demo the objects.
-    // NOTE: Thermostat objects rely on the Scheduler class's updates,
-    // meaning nothing will execute until the Scheduler class begins to update
-    // all its instances, meaning it's also safe to set these values here.
-    // Setting these via the web parameter interface.
-    //thermostat->setTargetTemperature(Temperature<float>(72));
-    //thermostat->setMode(Thermostat::Mode::Auto);
-    
+    thermostat = new Thermostat({14,12,13}, {thermometer});    
     
     // Begin WiFi configuration and do not continue until we've connected successfully.
     Serial.println("[WIFI] Setting radio configuration, please wait...");
@@ -77,15 +68,18 @@ void setup()
     
     
     // Begin web server for serving thermostat related data & operations.
-    /*server.on("/", []() {
-        String response;
-        response += "Currently ";
-        response += thermometer->temperature().value();
-        response += "F, Humidity @ ";
-        response += thermometer->humidity();
-        response += "%";
-        server.send(200, "text/plain", response);
-    });*/
+    server.onNotFound([]() {
+        String const path = server.uri().equals("/")? "/index.html" : server.uri();
+        
+        if (!SPIFFS.exists(path))
+        {
+            server.send(404, "text/plain", "Not Found!"); return;
+        }
+        
+        File file = SPIFFS.open(path, "r");
+        server.streamFile(file, GetContentType(path));
+        file.close();
+    });
     
     server.on("/status", []() {
         server.send(200, "application/json", GetStatusData());
@@ -139,19 +133,6 @@ void setup()
         thermostat->update(micros());
         
         server.send(200, "application/json", GetStatusData());
-    });
-    
-    server.onNotFound([]() {
-        String const path = server.uri().equals("/")? "/index.html" : server.uri();
-        
-        if (!SPIFFS.exists(path))
-        {
-            server.send(404, "text/plain", "Not Found!"); return;
-        }
-        
-        File file = SPIFFS.open(path, "r");
-        server.streamFile(file, GetContentType(path));
-        file.close();
     });
     
     SPIFFS.begin();

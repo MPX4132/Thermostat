@@ -30,7 +30,8 @@ class Pin
     typedef unsigned int Identifier;
     typedef short Value;
     
-    typedef std::map<Identifier, Pin> Set;
+    //typedef std::map<Identifier, Pin> Set;
+    typedef std::map<Identifier, Pin *> Set;
     typedef std::vector<Identifier> Arrangement;
     
     enum Mode
@@ -60,22 +61,24 @@ class Pin
     Configuration configuration() const;
     void setConfiguration(Configuration const &configuration);
     
-    static Set MakeSet(Arrangement const &pins);
+    static Set AllocateSet(Arrangement const &pins);
+    static void DeallocateSet(Set const &pins);
     
     Pin(Identifier const identifier);
-    Pin(Pin const &pin);
+    //Pin(Pin const &pin);
     Pin();
     ~Pin();
 
   protected:
     
-    typedef std::map<Identifier, Pin *> Association;
+    //typedef std::map<Identifier, Pin *> Association;
     
     Identifier const _identity;
     Value _value;
     Mode _mode;
     
-    static Association _Reserved;
+    //static Association _Reserved;
+    static Set _Reserved;
 
     static bool _Reserve(Pin * const pin);
     static bool _Release(Pin const * const pin);

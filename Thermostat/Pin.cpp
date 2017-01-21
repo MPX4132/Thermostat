@@ -11,7 +11,8 @@
 // =============================================================================
 // Pin : Static Variables Declaration
 // =============================================================================
-Pin::Association Pin::_Reserved;
+//Pin::Association Pin::_Reserved;
+Pin::Set Pin::_Reserved;
 
 
 // =============================================================================
@@ -111,14 +112,23 @@ void Pin::setConfiguration(Pin::Configuration const &configuration)
     this->setState(configuration.value);
 }
 
-Pin::Set Pin::MakeSet(Pin::Arrangement const &pins)
+Pin::Set Pin::AllocateSet(Pin::Arrangement const &pins)
 {
     Pin::Set set;
     for (Pin::Identifier const identifier : pins)
     {
-        set.emplace(identifier, Pin(identifier));
+        //set.emplace(identifier, Pin(identifier));
+        set.emplace(identifier, new Pin(identifier));
     }
     return set;
+}
+
+void Pin::DeallocateSet(Pin::Set const &pins)
+{
+    for (std::pair<Pin::Identifier, Pin *> const &pin : pins)
+    {
+        delete pin.second;
+    }
 }
 
 bool Pin::_Reserve(Pin * const pin)
@@ -146,14 +156,14 @@ _mode(Pin::Mode::Auto)
     this->setMode(Pin::_Reserve(this)? Pin::Mode::Auto : Pin::Mode::Invalid);
 }
 
-Pin::Pin(Pin const &pin):
+/*Pin::Pin(Pin const &pin):
 _identity(pin._identity),
 _value(pin._value),
 _mode(pin._mode)
 {
     // A copy invalidates the previous Pin, giving the copy precedence.
     if (Pin::_Release(&pin)) Pin::_Reserve(this);
-}
+}*/
 
 Pin::Pin():
 _identity(0),

@@ -83,14 +83,15 @@ public:
     Measurement measurementType() const;
     void setMeasurementType(Measurement const measurementType = TemperatureUnit);
     
+    int update(Scheduler::Time const time);
+    
     // The pin order is as follows by default: {FAN call, COOL call, HEAT call}
-
     Thermostat(Pin::Arrangement const &pins,
                Thermometers const &thermometers,
 #ifdef HARDWARE_INDEPENDENT
                Scheduler::Time const executeTimeInterval = 5);
 #else
-               Scheduler::Time const executeTimeInterval = 5000000);
+               Scheduler::Time const executeTimeInterval = 300000000);
 #endif
     virtual ~Thermostat();
     

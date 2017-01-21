@@ -134,6 +134,10 @@ void setup()
             }
         }
         
+        // Push changes by manually updating the instance.
+        // This will reflect changes immediately which will be sent as JSON.
+        thermostat->update(micros());
+        
         server.send(200, "application/json", GetStatusData());
     });
     

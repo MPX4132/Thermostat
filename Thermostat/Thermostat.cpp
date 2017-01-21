@@ -71,6 +71,11 @@ void Thermostat::setMeasurementType(Thermostat::Measurement const measurementTyp
     this->_reflectUpdates();
 }
 
+int Thermostat::update(Scheduler::Time const time)
+{
+    return this->execute(time);
+}
+
 Thermostat::Status Thermostat::_standby(Thermostat::Status const status)
 {
     this->actuate({ // Toggle all pins to 0, or release all relays, immediately.

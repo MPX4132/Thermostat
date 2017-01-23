@@ -88,11 +88,7 @@ public:
     // The pin order is as follows by default: {FAN call, COOL call, HEAT call}
     Thermostat(Pin::Arrangement const &pins,
                Thermometers const &thermometers,
-#ifdef HARDWARE_INDEPENDENT
-               Scheduler::Time const executeTimeInterval = 5);
-#else
                Scheduler::Time const executeTimeInterval = 300000000);
-#endif
     virtual ~Thermostat();
     
 protected:
@@ -111,8 +107,6 @@ protected:
     Status _standby(Status const status = Standby);
     Status _setCooler(bool const cool);
     Status _setHeater(bool const heat);
-    
-    void _reflectUpdates();
     
     // ================================================================
     // Scheduler::Event Methods

@@ -11,7 +11,6 @@
 
 #include <set>
 #include <map>
-#include <limits>
 #include "Development.hpp"
 #include "Identifiable.hpp"
 
@@ -33,7 +32,8 @@ public:
     // =========================================================================
     // Event: A schedualable class used to trigger one-time events.
     // =========================================================================
-    class Event {
+    class Event
+    {
     public:
         
         // The following method is meant to be implemented, meaning this class
@@ -61,7 +61,7 @@ public:
         // making it possible the execution time changes without having notified
         // the scheduler with the event enqueued. At that point the scheduler
         // could potentially skip events down the queue with higher priority!
-        virtual void _executeTimeReprioritize();
+        virtual void _executeTimeReprioritize(Time const lastPriority);
     };
     
     // Unfortunately I can't use the class below the way it was designed due to
@@ -72,7 +72,8 @@ public:
     // =========================================================================
     // Daemon: A schedulable class used to trigger repeating events.
     // =========================================================================
-    class Daemon : public Event {
+    class Daemon : public Event
+    {
     public:
         
         virtual Time executeTimeInterval() const;
@@ -84,16 +85,17 @@ public:
         virtual ~Daemon();
         
     protected:
+        
         Time _executeTimeInterval;
         
-        Time _executeTimeUpdate(Time const updateTime);
     };
     
     
     // =========================================================================
     // Delegate: A common interface used to interface with other classes.
     // =========================================================================
-    class Delegate {
+    class Delegate
+    {
     public:
         
         virtual void schedulerStartingEvent(Scheduler * const scheduler,
@@ -111,13 +113,13 @@ public:
     
     Delegate * delegate;
     
-    virtual bool enqueue(Event * const event);
-    virtual bool dequeue(Event * const event);
+    bool enqueue(Event * const event);
+    bool dequeue(Event * const event);
     
     static void UpdateInstances(Time const time);
     
     Scheduler();
-    virtual ~Scheduler();
+    ~Scheduler();
     
 protected:
     
@@ -134,6 +136,8 @@ protected:
         bool operator>(Task const &other) const;
         bool operator==(Task const &other) const;
         
+        Task& operator=(Task const &other); // Needed to copy _tasksOverflowed.
+        
         // The following memeber is marked mutable, signaling the compiler the
         // member should be modifiable in const cases. In this case, it's maked
         // mutable because I've got a set of Task, and sets only return
@@ -141,13 +145,14 @@ protected:
         // needs to be mutable (note, it doesn't affect Task's key/order in set).
         mutable Events events;
         
-        Time const priority;
+        // For the assignment operator, the value below must be modifiable.
+        Time priority; // Non-const becuase it's casted as const anyway by set.
         
         Task(Task const &task);
         Task(Event * const event);
         Task(Time const priority);
     };
-    
+
     // I'm using a Task set because if I were to use a map I wouldn't know which
     // priority I should stop at, and it's relevant because events must be
     // executed following their priority, so iterating over the map is impossible.
@@ -156,13 +161,16 @@ protected:
     typedef std::map<Event *, Scheduler *> Associations;
     
     Tasks _tasks;
-    Tasks _tasksEnqueued;
-    Tasks _tasksDequeued;
+    Tasks _tasksOverflowed; // Holds Tasks to insert when time wraps around.
     
-    virtual void _processEventsForTime(Time const priority);
+    Time _lastTime; // Last update cycle time.
     
-    void _processPendingEnqueueEvents();
-    void _processPendingDequeueEvents();
+    void _processEventsForTime(Time const priority);
+    
+    static bool _EnqueueTasksEvent(Tasks &tasks, Event * const event);
+    static bool _DequeueTasksEvent(Tasks &tasks, Event * const event);
+    
+    static bool _DequeueTasksEventWithPriority(Tasks &tasks, Event * const event, Time const priority);
     
     
     // The following static member holds all instances created of Scheduler,
@@ -177,7 +185,8 @@ protected:
     static void _AssociateEventToScheduler(Event * const event, Scheduler * const scheduler = nullptr);
     static void _DissasociateEvent(Event * const event);
     
-    static bool _ReprioritizeEvent(Event * const event);
+    static bool _ReprioritizeEvent(Event * const event, Time const lastPriority);
+    
 };
 
 #endif /* Scheduler_hpp */

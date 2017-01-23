@@ -44,7 +44,7 @@ int main(int argc, const char * argv[]) {
 Scheduler::Time micros()
 {
     static Scheduler::Time fakeTime = 0;
-    return fakeTime++;
+    return fakeTime += 20;
 }
 
 #endif

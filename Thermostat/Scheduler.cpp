@@ -27,12 +27,12 @@ void Scheduler::Event::setExecuteTime(Scheduler::Time const executeTime)
 {
     Time const lastExecuteTime = this->executeTime();
     this->_executeTime = executeTime;
-    if (lastExecuteTime != this->executeTime()) this->_executeTimeReprioritize();
+    if (lastExecuteTime != this->executeTime()) this->_executeTimeReprioritize(lastExecuteTime);
 }
 
-void Scheduler::Event::_executeTimeReprioritize()
+void Scheduler::Event::_executeTimeReprioritize(Scheduler::Time const lastPriority)
 {
-    Scheduler::_ReprioritizeEvent(this);
+    Scheduler::_ReprioritizeEvent(this, lastPriority);
 }
 
 Scheduler::Event::Event(Scheduler::Time const executeTime):
@@ -65,36 +65,6 @@ void Scheduler::Daemon::setExecuteTimeInterval(Scheduler::Time const executeTime
 bool Scheduler::Daemon::finished() const
 {
     return false;
-}
-
-Scheduler::Time Scheduler::Daemon::_executeTimeUpdate(Scheduler::Time const updateTime)
-{
-    Scheduler::Time nextUpdateTime = updateTime + this->executeTimeInterval();
-    
-    // Due to the damned max macro, I must use this macro bullshit for limits.
-    // You could argue I could do unsigned x - 1 to get max, but fuck that, it's ugly.
-    
-#ifdef max
-#pragma push_macro("max")
-#undef max
-#define RESTORE_MAX_DEFINE
-#endif
-    if (updateTime < nextUpdateTime)
-    {
-        this->setExecuteTime(nextUpdateTime);
-    } else
-    if (updateTime == std::numeric_limits<Scheduler::Time>::max())
-    {
-        this->setExecuteTime(this->executeTimeInterval());
-    } else
-    {
-        this->setExecuteTime(std::numeric_limits<Scheduler::Time>::max());
-    }
-#ifdef RESTORE_MAX_DEFINE
-#pragma pop_macro("max")
-#endif
-    
-    return this->executeTime();
 }
 
 Scheduler::Daemon::Daemon(Scheduler::Time const executeTime,
@@ -162,6 +132,13 @@ bool Scheduler::Task::operator==(Scheduler::Task const &other) const
     return this->priority == other.priority;
 }
 
+Scheduler::Task& Scheduler::Task::operator=(Scheduler::Task const &other)
+{
+    this->events = other.events;
+    this->priority = other.priority;
+    return *this;
+}
+
 Scheduler::Task::Task(Scheduler::Task const &task):
 events(task.events),
 priority(task.priority)
@@ -189,91 +166,40 @@ bool Scheduler::enqueue(Scheduler::Event * const event)
 {
     if (!event) return false;
     
-    // Passing priority to prevent the task instance inserting the element (temporary task obj.)
-    // We're just concerend with getting the task matching this one's priority.
-    // Sets can only return const_iterator and implicitly const iterator (using mutable to work around it).
-    Scheduler::Tasks::const_iterator task = this->_tasksEnqueued.find(Scheduler::Task(event->executeTime()));
+    if (!Scheduler::_EnqueueTasksEvent(this->_tasks, event)) return false;
     
-    if (task == this->_tasksEnqueued.end()) this->_tasksEnqueued.insert(Scheduler::Task(event));
-    else task->events.insert(event);
+    // Associate enqueueing Event to the Scheduler instance on registry.
+    Scheduler::_AssociateEventToScheduler(event, this);
     
     if (this->delegate) this->delegate->schedulerEnqueuedEvent(this, event);
     
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Scheduler <" << std::hex << this << ">] Event <" << std::hex << event << "> is pending enqueue (" << ((task != this->_tasksEnqueued.end())? task->events.size() : 1) << " pending Event(s))." << std::endl;
-#else
-    Serial.print("[Scheduler <");
-    Serial.print((unsigned long) this, HEX);
-    Serial.print(">] Event <");
-    Serial.print((unsigned long) event, HEX);
-    Serial.print("> is pending enqueue (");
-    Serial.print((task != this->_tasksEnqueued.end())? task->events.size() : 1);
-    Serial.println(" pending Event(s)).");
-#endif
-#endif
     return true;
 }
 
 bool Scheduler::dequeue(Scheduler::Event * const event)
 {
+    if (!Scheduler::_DequeueTasksEvent(this->_tasks, event))
+    {
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Scheduler <" << std::hex << this << ">] Event <" << std::hex << event << "> pending dequeue." << std::endl;
+        std::cout << "[Scheduler <" << std::hex << this << ">] ERROR: Event <" << std::hex << event << "> WASN'T FOUND (MISSING)!!!" << std::endl;
 #else
-    Serial.print("[Scheduler <");
-    Serial.print((unsigned long) this, HEX);
-    Serial.print(">] Event <");
-    Serial.print((unsigned long) event);
-    Serial.print("> pending dequeue.");
+        Serial.print("[Scheduler <");
+        Serial.print((unsigned long) this, HEX);
+        Serial.print(">] ERROR: Event <");
+        Serial.print((unsigned long) event);
+        Serial.print("> WASN'T FOUND (MISSING)!!!");
 #endif
 #endif
-    
-    Scheduler::Tasks::const_iterator task; // Used to check existance of event in _tasks or _enqueuedTasks.
-    
-    task = this->_tasks.find(Scheduler::Task(event->executeTime()));
-    
-    // If the event's priority task is found, it may be found inside the task event's set.
-    // If category doesn't exist, event definitely isn't in the tasks set.
-    if (task != this->_tasks.end() && task->events.count(event))
-    {
-        Scheduler::Tasks::const_iterator holder = this->_tasksDequeued.find(Task(event->executeTime()));
-        
-        if (holder == this->_tasksDequeued.end()) this->_tasksDequeued.insert(Task(event));
-        else holder->events.insert(event);
-            
-        if (this->delegate) this->delegate->schedulerDequeuedEvent(this, event);
-        return true;
+        return false;
     }
     
-    task = this->_tasksEnqueued.find(Scheduler::Task(event));
+    // Disassociate Event from Scheduler instance on registry.
+    Scheduler::_AssociateEventToScheduler(event, nullptr);
     
-    // If the event's priority task is found, it may be found inside the task event's set.
-    // If category doesn't exist, event definitely isn't in the tasks set.
-    if (task != this->_tasksEnqueued.end() && task->events.count(event))
-    {
-        Scheduler::Tasks::const_iterator holder = this->_tasksDequeued.find(Task(event->executeTime()));
-        
-        if (holder == this->_tasksDequeued.end()) this->_tasksDequeued.insert(Task(event));
-        else holder->events.insert(event);
-        
-        if (this->delegate) this->delegate->schedulerDequeuedEvent(this, event);
-        return true;
-    }
+    if (this->delegate) this->delegate->schedulerDequeuedEvent(this, event);
     
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Scheduler <" << std::hex << this << ">] ERROR: Event <" << std::hex << event << "> WASN'T FOUND (MISSING)!!!" << std::endl;
-#else
-    Serial.print("[Scheduler <");
-    Serial.print((unsigned long) this, HEX);
-    Serial.print(">] ERROR: Event <");
-    Serial.print((unsigned long) event);
-    Serial.print("> WASN'T FOUND (MISSING)!!!");
-#endif
-#endif
-    
-    return false;
+    return true;
 }
 
 void Scheduler::UpdateInstances(Scheduler::Time const time)
@@ -296,14 +222,6 @@ void Scheduler::UpdateInstances(Scheduler::Time const time)
         {
             std::cout << "[Scheduler <" << std::hex << scheduler << ">] Holding " << task.events.size() << " Event(s) <P: " << task.priority << "> pending runtime." << std::endl;
         }
-        for (Scheduler::Task const &task : scheduler->_tasksEnqueued)
-        {
-            std::cout << "[Scheduler <" << std::hex << scheduler << ">] Holding " << task.events.size() << " Event(s) <P: " << task.priority << "> pending enqueued." << std::endl;
-        }
-        for (Scheduler::Task const &task : scheduler->_tasksDequeued)
-        {
-            std::cout << "[Scheduler <" << std::hex << scheduler << ">] Holding " << task.events.size() << " Event(s) <P: " << task.priority << "> pending dequeued." << std::endl;
-        }
 #else
         Serial.print("[Scheduler <");
         Serial.print((unsigned long) scheduler, HEX);
@@ -317,26 +235,6 @@ void Scheduler::UpdateInstances(Scheduler::Time const time)
             Serial.print(" Event(s) <P: ");
             Serial.print(task.priority);
             Serial.println("> pending runtime.");
-        }
-        for (Scheduler::Task const &task : scheduler->_tasksEnqueued)
-        {
-            Serial.print("[Scheduler <");
-            Serial.print((unsigned long) scheduler, HEX);
-            Serial.print(">] Holding ");
-            Serial.print(task.events.size());
-            Serial.print(" Event(s) <P: ");
-            Serial.print(task.priority);
-            Serial.println("> pending enqueued.");
-        }
-        for (Scheduler::Task const &task : scheduler->_tasksDequeued)
-        {
-            Serial.print("[Scheduler <");
-            Serial.print((unsigned long) scheduler, HEX);
-            Serial.print(">] Holding ");
-            Serial.print(task.events.size());
-            Serial.print(" Event(s) <P: ");
-            Serial.print(task.priority);
-            Serial.println("> pending dequeued.");
         }
 #endif
 #endif
@@ -365,13 +263,30 @@ void Scheduler::UpdateInstances(Scheduler::Time const time)
 
 void Scheduler::_processEventsForTime(Scheduler::Time const time)
 {
+    // Check for potential time overflow, start with those & reset the overflowed Tasks set.
+    if (this->_lastTime > time) {this->_tasks = this->_tasksOverflowed; this->_tasksOverflowed.clear();}
+    
+    // We'll be copying the Event instances which are going to be executed this cycle to the variable below
+    // for safety. That's because we might be modifying the _tasks container leading to undefined behaviour.
+    Scheduler::Tasks executableTasks; // Stores Task instances which will be executed in this update cycle.
+    
+    // Get a copy of all Task instances (pointers) we'll be executing this update cycle for safety.
     for (Scheduler::Task const &task : this->_tasks)
+    {
+        // All Event instances of equal execution time are stored in the same Task instance,
+        // these Task instances are then stored in std::map and are sorted (prioritized) incrementally.
+        // That means Task instances with lower priority come first, beacuse Event instances containing
+        // lower (earlier) execution times must be executed before those of higher (later) execution times.
+        // This means only Task instances with priority less than or equal to time must be executed now.
+        if (task.priority > time) break;
+        
+        executableTasks.insert(task);
+    }
+    
+    for (Scheduler::Task const &task : executableTasks)
     {
         for (Scheduler::Event * const event : task.events)
         {
-            // Event instances are stored sorted in std::map incrementally,
-            // meaning we can stop once the instances' execution time is above time.
-            if (event->executeTime() > time) break;
             if (this->delegate) this->delegate->schedulerStartingEvent(this, event);
             
 #if defined DEBUG && defined SCHEDULER_LOGS
@@ -421,127 +336,148 @@ void Scheduler::_processEventsForTime(Scheduler::Time const time)
             
             if (this->delegate) this->delegate->schedulerCompletedEvent(this, event);
             
-            
+            // Check for special case, being Daemon instances.
             if (Identifiable<Daemon>::Instanced(event))
             {
+                // Since this is a Daemon, and Daemons repeat until finished,
+                // calcualte next execution time and request scheduler priority update.
                 Daemon * const daemon = static_cast<Daemon *>(event);
-                if (daemon->finished()) this->dequeue(daemon);
+                if (!daemon->finished())
+                {
+                    // Calculate the Daemon instance's next execution time.
+                    Scheduler::Time const executeTime = time + daemon->executeTimeInterval();
+                    
+                    // Check for potential Scheduler::Time integer overflow.
+                    if (executeTime < time)
+                    {
+                        // Remove from main Task instance set and reinsert into overflowed set.
+                        if (Scheduler::_DequeueTasksEvent(this->_tasks, event))
+                        {
+                            event->setExecuteTime(executeTime);
+                            Scheduler::_EnqueueTasksEvent(this->_tasksOverflowed, event);
+                        }
+                    }
+                    // Update the execution time, but notice this reprioritizes the event.
+                    else daemon->setExecuteTime(executeTime);
+                }
+                // These will only be dequeued with notification when they're really done.
+                else this->dequeue(static_cast<Event *>(daemon));
             }
+            // These will only be dequeued with notification when they're really done.
             else this->dequeue(event);
         }
     }
     
-    this->_processPendingDequeueEvents();
-    this->_processPendingEnqueueEvents();
+    this->_lastTime = time;
 }
 
-void Scheduler::_processPendingEnqueueEvents()
+bool Scheduler::_EnqueueTasksEvent(Scheduler::Tasks &tasks, Scheduler::Event * const event)
 {
-    // Enqueue any pending Events. It's safe at this point since there's
-    // nothing modifying _tasksEnqueued at this point.
-    // Enqueued Event has already been called in the enqueue method.
-    for (Scheduler::Task const &taskEnqueued : this->_tasksEnqueued)
-    {
-        // Preemptively attempt to find category (priority Task) in _tasks to save lookups each time.
-        // If not found we'll try again in the for loop below only for the first failure.
-        Scheduler::Tasks::const_iterator task = this->_tasks.find(Scheduler::Task(taskEnqueued.priority));
-        
-        for (Scheduler::Event * const event : taskEnqueued.events)
-        {
-            
-            if (task == this->_tasks.end())
-            {
-                // If no Task for priority was found, create a new Task with the current event.
-                this->_tasks.insert(Scheduler::Task(event));
-                // Update the task iterator to point to the proper Task.
-                task = this->_tasks.find(Scheduler::Task(taskEnqueued.priority));
-            } else task->events.insert(event);
-            
+    // Passing priority to prevent the task instance inserting the element (temporary task obj.)
+    // We're just concerend with getting the Task instance matching this one's priority.
+    // NOTE: Sets ONLY return const_iterator and implicitly const iterator (using mutable to work around it).
+    // The "mutable" keyword works in this case because it doesn't affect the priority or position in the map.
+    Scheduler::Tasks::const_iterator const task = tasks.find(Scheduler::Task(event->executeTime()));
+    
+    if (task == tasks.end()) tasks.insert(Scheduler::Task(event));
+    else task->events.insert(event);
+    
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
-            std::cout << "[Scheduler] Event <" << std::hex
-            << event << "> enqueued." << std::endl;
+    std::cout << "[Scheduler] Event <" << std::hex
+    << event << "> enqueued." << std::endl;
 #else
-            Serial.print("[Scheduler] Event <");
-            Serial.print((unsigned long) event);
-            Serial.println("> enqueued.");
+    Serial.print("[Scheduler] Event <");
+    Serial.print((unsigned long) event);
+    Serial.println("> enqueued.");
 #endif
 #endif
-            // Associate enqueueing Event to the scheduler instance on registry.
-            Scheduler::_AssociateEventToScheduler(event, this);
-        }
-    }
     
-    this->_tasksEnqueued.clear(); // Reset enqueued Events holder
+    return true;
 }
 
-void Scheduler::_processPendingDequeueEvents()
+bool Scheduler::_DequeueTasksEvent(Scheduler::Tasks &tasks, Scheduler::Event * const event)
 {
-    // Dequeue any pending events at this point to keep _events set
-    // as small as possible when inserting, for better performance.
-    for (Scheduler::Task const &taskDequeued : this->_tasksDequeued)
+    Scheduler::Tasks::const_iterator const task = tasks.find(Scheduler::Task(event->executeTime()));
+    
+    // If the event's priority task is found, it may be found inside the task event's set.
+    // If category doesn't exist, event definitely isn't in the tasks set.
+    if (task != tasks.end() && task->events.count(event))
     {
-        // Prepare to avoid having to repeat search every time, these are n log( size + n ), I think.
-        Scheduler::Tasks::const_iterator const task = this->_tasks.find(Scheduler::Task(taskDequeued.priority));
-        Scheduler::Tasks::const_iterator const taskEnqueued = this->_tasksEnqueued.find(Scheduler::Task(taskDequeued.priority));
+        // Event based objects are unregistered by the Event destructor.
+        if (task->events.size() > 1) task->events.erase(event);
+        else tasks.erase(task);
         
-        for (Scheduler::Event * const event : taskDequeued.events)
-        {
-            
-            // Attempt to find the event in the _events set (usual).
-            if (task != this->_tasks.end() && task->events.count(event))
-            {
-                // Any Event based object is unregistered Event destructor.
-                task->events.erase(event);
-                //this->_tasks.erase(target);
-                
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
-                std::cout << "[Scheduler] Event <" << std::hex
-                << event << "> dequeued." << std::endl;
+        std::cout << "[Scheduler] Event <" << std::hex
+        << event << "> dequeued." << std::endl;
 #else
-                Serial.print("[Scheduler] Event <");
-                Serial.print((unsigned long) event);
-                Serial.println("> dequeued.");
+        Serial.print("[Scheduler] Event <");
+        Serial.print((unsigned long) event);
+        Serial.println("> dequeued.");
 #endif
 #endif
-                continue;
-            }
-            
-            // Attempt to find the event in the _eventsEnqued set (unusual).
-            if (taskEnqueued != this->_tasksEnqueued.end() && taskEnqueued->events.count(event))
-            {
-                // Any Event based object is unregistered Event destructor.
-                taskEnqueued->events.erase(event);
-                
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-                std::cout << "[Scheduler] Event <" << std::hex
-                << event << "> dequeued." << std::endl;
-#else
-                Serial.print("[Scheduler] Event <");
-                Serial.print((unsigned long) event);
-                Serial.println("> dequeued.");
-#endif
-#endif
-                continue;
-            }
-            
-            // If the code reached this stage, event wasn't found!
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-            std::cout << std::endl << "[Scheduler] ERROR: THE EVENT <" << std::hex
-            << event << "> WASN'T FOUND!" << std::endl;
-#else
-            Serial.print("[Scheduler] ERROR: THE EVENT <");
-            Serial.print((unsigned long) event);
-            Serial.println("> WASN'T FOUND!");
-#endif
-#endif
-        }
+        
+        return true;
     }
     
-    this->_tasksDequeued.clear(); // Reset dequeued Events holder
+    // If the code reached this stage, event wasn't found!
+#if defined DEBUG && defined SCHEDULER_LOGS
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << std::endl << "[Scheduler] ERROR: THE EVENT <" << std::hex
+    << event << "> WASN'T FOUND!" << std::endl;
+#else
+    Serial.print("[Scheduler] ERROR: THE EVENT <");
+    Serial.print((unsigned long) event);
+    Serial.println("> WASN'T FOUND!");
+#endif
+#endif
+    
+    return false;
+}
+
+bool Scheduler::_DequeueTasksEventWithPriority(Scheduler::Tasks &tasks,
+                                               Scheduler::Event * const event,
+                                               Scheduler::Time const priority)
+{
+    Scheduler::Tasks::const_iterator const task = tasks.find(Scheduler::Task(priority));
+    
+    // If the event's priority task is found, it may be found inside the task event's set.
+    // If category doesn't exist, event definitely isn't in the tasks set.
+    if (task != tasks.end() && task->events.count(event))
+    {
+        // Event based objects are unregistered by the Event destructor.
+        if (task->events.size() > 1) task->events.erase(event);
+        else tasks.erase(task);
+        
+#if defined DEBUG && defined SCHEDULER_LOGS
+#ifdef HARDWARE_INDEPENDENT
+        std::cout << "[Scheduler] Event <" << std::hex
+        << event << "> dequeued." << std::endl;
+#else
+        Serial.print("[Scheduler] Event <");
+        Serial.print((unsigned long) event);
+        Serial.println("> dequeued.");
+#endif
+#endif
+        
+        return true;
+    }
+    
+    // If the code reached this stage, event wasn't found!
+#if defined DEBUG && defined SCHEDULER_LOGS
+#ifdef HARDWARE_INDEPENDENT
+    std::cout << std::endl << "[Scheduler] ERROR: THE EVENT <" << std::hex
+    << event << "> WASN'T FOUND!" << std::endl;
+#else
+    Serial.print("[Scheduler] ERROR: THE EVENT <");
+    Serial.print((unsigned long) event);
+    Serial.println("> WASN'T FOUND!");
+#endif
+#endif
+    
+    return false;
 }
 
 void Scheduler::_AssociateEventToScheduler(Scheduler::Event *  const event,
@@ -600,7 +536,7 @@ void Scheduler::_DissasociateEvent(Scheduler::Event * const event)
 #endif
 }
 
-bool Scheduler::_ReprioritizeEvent(Scheduler::Event * const event)
+bool Scheduler::_ReprioritizeEvent(Scheduler::Event * const event, Time const lastPriority)
 {
     if (!event) return false;
     
@@ -616,9 +552,9 @@ bool Scheduler::_ReprioritizeEvent(Scheduler::Event * const event)
     
     Scheduler * const scheduler = Scheduler::_AssociationRegister[event];
     
-    // No need to reprioritize if singleton set.
-    if (scheduler->_tasks.size() > 1) {
-        if (!scheduler->dequeue(event))
+    // No need to reprioritize if not in a scheduler.
+    if (scheduler) {
+        if (!Scheduler::_DequeueTasksEventWithPriority(scheduler->_tasks, event, lastPriority))
         {
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
@@ -632,7 +568,7 @@ bool Scheduler::_ReprioritizeEvent(Scheduler::Event * const event)
             return false;
         }
         
-        if (!scheduler->enqueue(event))
+        if (!Scheduler::_EnqueueTasksEvent(scheduler->_tasks, event))
         {
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
@@ -660,7 +596,8 @@ bool Scheduler::_ReprioritizeEvent(Scheduler::Event * const event)
 }
 
 Scheduler::Scheduler():
-delegate(nullptr)
+delegate(nullptr),
+_lastTime(0)
 {
     Scheduler::_InstanceRegister.insert(this);
 }

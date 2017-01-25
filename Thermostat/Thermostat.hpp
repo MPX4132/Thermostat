@@ -67,18 +67,21 @@ public:
     // ================================================================
     // Thermostat Methods
     // ================================================================
-    virtual Mode mode() const;
+    Mode mode() const;
     void setMode(const Mode mode = Off);
     
     Status status() const;
     
-    // This method returns the average temperature of the thermometers.
-    virtual Temperature<float> temperature();
+    // This method returns the average humidity of all thermometers.
+    float humidity();
     
-    virtual Temperature<float> targetTemperature() const;
-    virtual void setTargetTemperature(Temperature<float> const targetTemperature,
-                                      // About a degree (F/C) of threshold
-                                      float const targetTemperatureThreshold = 1);
+    // This method returns the average temperature of all thermometers.
+    Temperature<float> temperature();
+    
+    Temperature<float> targetTemperature() const;
+    void setTargetTemperature(Temperature<float> const targetTemperature,
+                              // About a degree (F/C) of threshold
+                              float const targetTemperatureThreshold = 1);
     
     Measurement measurementType() const;
     void setMeasurementType(Measurement const measurementType = TemperatureUnit);

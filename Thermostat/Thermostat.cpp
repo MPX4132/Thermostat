@@ -26,16 +26,30 @@ Thermostat::Status Thermostat::status() const
     return this->_status;
 }
 
+float Thermostat::humidity()
+{
+    float humidity = 0;
+    
+    for (Thermometer * const thermometer : this->thermometers)
+    {
+        humidity += thermometer->humidity();
+    }
+    
+    if (this->thermometers.size() > 1) humidity /= this->thermometers.size();
+    
+    return humidity;
+}
+
 Temperature<float> Thermostat::temperature()
 {
     Temperature<float> temperature = 0;
     
-    for (Thermometer *thermometer : this->thermometers)
+    for (Thermometer * const thermometer : this->thermometers)
     {
         temperature += thermometer->temperature();
     }
     
-    if (this->thermometers.size()) temperature /= this->thermometers.size();
+    if (this->thermometers.size() > 1) temperature /= this->thermometers.size();
     
     return temperature;
 }
@@ -110,23 +124,30 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     // Read this only once every update, since the sensor may need to timeout for a bit.
     // In my case, the DHT22 needs to timeout for about two seconds after a read cycle.
     Temperature<float> const currentTemperature = this->temperature();
+    float const currentHumidity = this->humidity();
     
 #if defined DEBUG && defined THERMOSTAT_LOGS
 #ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Thermostat <" << std::hex << this << ">] Currently " << std::dec << currentTemperature.value(Temperature<float>::Scale::Fahrenheit) << "F at " << updateTime << ", temperature set at " << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F." << std::endl;
+    std::cout << "[Thermostat <" << std::hex << this << ">] T:" << std::dec << currentTemperature.value(Temperature<float>::Scale::Fahrenheit) << "F -> " << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F, H:" << currentHumidity << ", M:" << this->mode() << ", S:" << this->status() << " at " << updateTime << std::endl;
 #else
     Serial.print("[Thermostat <");
     Serial.print((unsigned long) this, HEX);
-    Serial.print(">] Currently ");
+    Serial.print(">] T:");
     Serial.print(currentTemperature.value(Temperature<float>::Scale::Fahrenheit));
-    Serial.print("F at ");
-    Serial.print(updateTime);
-    Serial.print(", temperature set at ");
+    Serial.print("F -> ");
     Serial.print(this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit));
-    Serial.println("F.");
+    Serial.print("F, H:");
+    Serial.print(this->humidity());
+    Serial.print(", M:");
+    Serial.print(this->mode());
+    Serial.print(", S:");
+    Serial.print(this->status());
+    Serial.print(" at ");
+    Serial.println(updateTime);
 #endif
 #endif
     
+#warning The measurement type HeatIndexUnit isn't being respected here, since it hasn't been implemented yet!
     switch (this->mode())
     {
         case Off: this->_status = this->_standby();

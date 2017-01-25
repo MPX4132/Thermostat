@@ -136,7 +136,7 @@ protected:
         bool operator>(Task const &other) const;
         bool operator==(Task const &other) const;
         
-        Task& operator=(Task const &other); // Needed to copy _tasksOverflowed.
+        // Using [implicit] struct copy operator.
         
         // The following memeber is marked mutable, signaling the compiler the
         // member should be modifiable in const cases. In this case, it's maked

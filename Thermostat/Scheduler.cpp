@@ -132,13 +132,6 @@ bool Scheduler::Task::operator==(Scheduler::Task const &other) const
     return this->priority == other.priority;
 }
 
-Scheduler::Task& Scheduler::Task::operator=(Scheduler::Task const &other)
-{
-    this->events = other.events;
-    this->priority = other.priority;
-    return *this;
-}
-
 Scheduler::Task::Task(Scheduler::Task const &task):
 events(task.events),
 priority(task.priority)
@@ -353,7 +346,8 @@ void Scheduler::_processEventsForTime(Scheduler::Time const time)
                         // Remove from main Task instance set and reinsert into overflowed set.
                         if (Scheduler::_DequeueTasksEvent(this->_tasks, event))
                         {
-                            event->setExecuteTime(executeTime);
+                            // Since we've dequeued the event, it's not going to attempt to reprioritize.
+                            event->setExecuteTime(executeTime); // Preventing reprioritizing here.
                             Scheduler::_EnqueueTasksEvent(this->_tasksOverflowed, event);
                         }
                     }

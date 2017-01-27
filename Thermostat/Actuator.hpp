@@ -12,9 +12,16 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <limits>
 #include "Development.hpp"
 #include "Pin.hpp"
 #include "Scheduler.hpp"
+
+#ifdef HARDWARE_INDEPENDENT
+#include <iostream>
+#else
+#include <Arduino.h>
+#endif
 
 // =============================================================================
 // Actuator : This class abstracts the functionality of Actuators, only being
@@ -44,7 +51,7 @@ public:
     virtual bool ready() const;
     virtual void actuate(Actions const &actions);
     
-    Actuator(Pin::Arrangement const &pins);
+    Actuator(Pin::Arrangement const &pins, Scheduler::Time const actuateTimeout = 0);
     Actuator(Actuator const &actuator);
     virtual ~Actuator();
     
@@ -69,6 +76,9 @@ protected:
     Pin::Set _pins;
     Pin::Arrangement _pinout;
     
+    Scheduler::Time const _actuateTimeout;
+    Scheduler::Time _actuateTime;
+    
     Scheduler _scheduler;
     
     
@@ -76,6 +86,10 @@ protected:
                                         Scheduler::Event * const event);
     
 };
+
+#ifdef HARDWARE_INDEPENDENT
+unsigned long micros();
+#endif
 
 #endif /* Actuator_hpp */
 

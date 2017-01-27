@@ -68,12 +68,15 @@ public:
     // Thermostat Methods
     // ================================================================
     Mode mode() const;
-    void setMode(const Mode mode = Off);
+    void setMode(Mode const mode = Off);
     
     Status status() const;
     
     // This method returns the average humidity of all thermometers.
     float humidity();
+    
+    // This method returns the average humiture of all thermometers.
+    Temperature<float> humiture();
     
     // This method returns the average temperature of all thermometers.
     Temperature<float> temperature();

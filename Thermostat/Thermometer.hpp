@@ -29,11 +29,13 @@ public:
     // NOTE: The methods below call Sensor's sense() method to update values,
     // which are then returned by default. However, these can be overwritten.
     virtual Temperature<float> temperature();
+    virtual Temperature<float> humiture(); // AKA, Heat Index.
     virtual float humidity();
     
     virtual Range range() const;
     
     Thermometer(Pin::Arrangement const &pins,
+                Scheduler::Time const senseTimeout = 0,
                 Range const &range = std::make_pair(Temperature<float>(),
                                                     Temperature<float>()));
     

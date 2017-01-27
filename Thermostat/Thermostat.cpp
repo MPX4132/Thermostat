@@ -40,6 +40,21 @@ float Thermostat::humidity()
     return humidity;
 }
 
+Temperature<float> Thermostat::humiture()
+{
+    Temperature<float> humiture = 0;
+    
+    for (Thermometer * const thermometer : this->thermometers)
+    {
+        humiture += thermometer->humiture();
+    }
+    
+    if (this->thermometers.size() > 1) humiture /= this->thermometers.size();
+    
+    return humiture;
+}
+
+
 Temperature<float> Thermostat::temperature()
 {
     Temperature<float> temperature = 0;
@@ -78,6 +93,8 @@ void Thermostat::setMeasurementType(Thermostat::Measurement const measurementTyp
 
 int Thermostat::update(Scheduler::Time const time)
 {
+    // NOTE: This method will NOT change the previously scheduled update time,
+    // meaning an update might occur back-to-back or fairly close to each other.
     return this->execute(time);
 }
 
@@ -123,10 +140,10 @@ int Thermostat::execute(Scheduler::Time const updateTime)
 
     // Read this only once every update, since the sensor may need to timeout for a bit.
     // In my case, the DHT22 needs to timeout for about two seconds after a read cycle.
-    Temperature<float> const currentTemperature = this->temperature();
-    float const currentHumidity = this->humidity();
+    Temperature<float> const currentTemperature = (this->measurementType() == Thermostat::Measurement::TemperatureUnit)? this->temperature() : this->humiture();
     
 #if defined DEBUG && defined THERMOSTAT_LOGS
+    float const currentHumidity = this->humidity();
 #ifdef HARDWARE_INDEPENDENT
     std::cout << "[Thermostat <" << std::hex << this << ">] T:" << std::dec << currentTemperature.value(Temperature<float>::Scale::Fahrenheit) << "F -> " << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F, H:" << currentHumidity << ", M:" << this->mode() << ", S:" << this->status() << " at " << updateTime << std::endl;
 #else
@@ -137,7 +154,7 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     Serial.print("F -> ");
     Serial.print(this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit));
     Serial.print("F, H:");
-    Serial.print(this->humidity());
+    Serial.print(currentHumidity);
     Serial.print(", M:");
     Serial.print(this->mode());
     Serial.print(", S:");
@@ -147,7 +164,6 @@ int Thermostat::execute(Scheduler::Time const updateTime)
 #endif
 #endif
     
-#warning The measurement type HeatIndexUnit isn't being respected here, since it hasn't been implemented yet!
     switch (this->mode())
     {
         case Off: this->_status = this->_standby();

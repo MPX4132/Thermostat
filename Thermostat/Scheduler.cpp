@@ -303,9 +303,14 @@ void Scheduler::_processEventsForTime(Scheduler::Time const time)
             {
 #if defined DEBUG && defined SCHEDULER_LOGS
 #ifdef HARDWARE_INDEPENDENT
-                std::cout << "Event returned error code " << error << std::endl;
+                std::cout << "[Scheduler <" << std::hex << this << ">] Event <"
+                << std::hex << event << "> returned error code " << std::dec << error << std::endl;
 #else
-                Serial.print("Event returned error code ");
+                Serial.print("[Scheduler <");
+                Serial.print((unsigned long) this, HEX);
+                Serial.print(">] Event <");
+                Serial.print((unsigned long) event, HEX);
+                Serial.print("> returned error code ");
                 Serial.println(error);
 #endif
 #endif

@@ -33,7 +33,7 @@ public:
     
     virtual Data sense();
     
-    Sensor(Pin::Arrangement const &pins);
+    Sensor(Pin::Arrangement const &pins, Scheduler::Time const senseTimeout = 0);
     virtual ~Sensor();
     
 };

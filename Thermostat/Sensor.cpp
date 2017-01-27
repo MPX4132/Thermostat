@@ -22,8 +22,8 @@ Sensor::Data Sensor::sense() {
     return Sensor::Data(); // Empty data
 }
 
-Sensor::Sensor(Pin::Arrangement const &pins):
-Actuator(pins)
+Sensor::Sensor(Pin::Arrangement const &pins, Scheduler::Time const senseTimeout):
+Actuator(pins, senseTimeout)
 {
     
 }

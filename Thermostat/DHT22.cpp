@@ -13,32 +13,15 @@ void delayMicroseconds(unsigned long time)
 {
     // Fake test function.
 }
-
-unsigned long micros();
 #endif
 
 // ================================================================
 // DHT22 Implementation
 // ================================================================
-bool DHT22::ready() const
-{
-#ifndef HARDWARE_INDEPENDENT
-    return (this->_senseTime + DHT22_TIMEOUT) <= millis();
-#else
-    return true;
-#endif
-}
-
 Sensor::Data DHT22::sense() {
     
     // Assure all pins are ready to use (data line).
     if (!this->ready()) return Sensor::Data();
-    
-#ifndef HARDWARE_INDEPENDENT
-    // Log sensor's sense time to throttle usage while on cooldown.
-    // NOTE: This is relevant for physical device, not simulation.
-    this->_senseTime = millis();
-#endif
     
     Sensor::Data data(5); // Buffer for data (40-bit)
     
@@ -212,9 +195,9 @@ bool DHT22::DHT22::_validData(Sensor::Data const &data)
 
 DHT22::DHT22(Pin::Identifier const pin):
 Thermometer({pin},
-std::make_pair(Temperature<float>(-40, Temperature<float>::Scale::Celsius),
-               Temperature<float>(80, Temperature<float>::Scale::Celsius))),
-_senseTime(0)
+            DHT22_TIMEOUT,
+            std::make_pair(Temperature<float>(-40, Temperature<float>::Scale::Celsius),
+                           Temperature<float>(80, Temperature<float>::Scale::Celsius)))
 {
     
 }

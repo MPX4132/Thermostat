@@ -23,21 +23,24 @@ time(time)
 
 bool Actuator::ready() const
 {
-    // The loop below was used for copy pins, when copies would transfer ownership to other pins.
-    /*for (Pin::Set::const_iterator iPin = this->_pins.begin(); iPin != this->_pins.end(); iPin++)
-    {
-        if (!iPin->second.ready()) return false;
-    }*/
-
     for (Pin::Set::value_type const &pair : this->_pins)
     {
         if (!pair.second->ready()) return false;
     }
-    return true;
+    
+    Scheduler::Time const currentTime = micros();
+    
+    // Check instance's timeout has elapsed and is now capable of actuating,
+    // but we must consider a potential integer overflow from the MCU clock.
+    return (currentTime > this->_actuateTime)?
+    ((currentTime - this->_actuateTime) > this->_actuateTimeout) :
+    (this->_actuateTime + this->_actuateTimeout) < currentTime; // Overflowed
 }
 
 void Actuator::actuate(Actuator::Actions const &actions)
 {
+    this->_actuateTime = micros(); // Update actuation time to now.
+    
     for (Actuator::Action const &action : actions) {
         // Note: Count is optimal here due to the fact _pins is a map log(n).
         if (!_pins.count(action.pin)) continue; // If not ours, skip the pin.
@@ -75,16 +78,29 @@ void Actuator::schedulerDequeuedEvent(Scheduler * const scheduler,
     delete event; // Delete the dynamically created actuator event object
 }
 
-Actuator::Actuator(Pin::Arrangement const &pins):
+#ifdef max // To the one who made a lowercase macro: Fuck you.
+#pragma push_macro("max")
+#undef max
+#define RESTORE_max
+#endif
+Actuator::Actuator(Pin::Arrangement const &pins, Scheduler::Time const actuateTimeout):
 _pins(Pin::AllocateSet(pins)),
-_pinout(pins)
+_pinout(pins),
+_actuateTimeout(actuateTimeout),
+// The following will force the instance to be ready as soon as it's initialized.
+_actuateTime(std::numeric_limits<Scheduler::Time>::max() - (actuateTimeout - 1))
 {
     this->_scheduler.delegate = static_cast<Scheduler::Delegate *>(this);
 }
+#ifdef RESTORE_max
+#pragma pop_macro("max")
+#endif
 
 Actuator::Actuator(Actuator const &actuator):
 _pins(actuator._pins),
-_pinout(actuator._pinout)
+_pinout(actuator._pinout),
+_actuateTimeout(actuator._actuateTimeout),
+_actuateTime(actuator._actuateTime)
 {
     
 }
@@ -93,4 +109,3 @@ Actuator::~Actuator()
 {
     Pin::DeallocateSet(this->_pins);
 }
-

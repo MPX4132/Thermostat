@@ -185,6 +185,8 @@ Sensor::Data DHT22::sense() {
 #endif
 #endif
     
+    Sensor::sense(); // To activate a sensor timeout.
+    
     return data;
 }
 

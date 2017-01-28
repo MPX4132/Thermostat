@@ -96,10 +96,13 @@ void setup()
         {
             if (modeArgument.equals("auto") || modeArgument.equals("3"))
                 thermostat->setMode(Thermostat::Mode::Auto);
+            else
             if (modeArgument.equals("cool") || modeArgument.equals("2"))
                 thermostat->setMode(Thermostat::Mode::Cool);
+            else
             if (modeArgument.equals("heat") || modeArgument.equals("1"))
                 thermostat->setMode(Thermostat::Mode::Heat);
+            else
             if (modeArgument.equals("off") || modeArgument.equals("0"))
                 thermostat->setMode(Thermostat::Mode::Off);
         }
@@ -126,6 +129,16 @@ void setup()
                     thermostat->setTargetTemperature(Temperature<float>(value, static_cast<Temperature<float>::Scale>(scale)));
                 }
             }
+        }
+        
+        String const tempTypeArgument = server.arg("type");
+        if (tempTypeArgument.length())
+        {
+            if (tempTypeArgument.equals("HI") || tempTypeArgument.equals("1"))
+                thermostat->setMeasurementType(Thermostat::Measurement::HeatIndexUnit);
+            else
+            if (tempTypeArgument.equals("T") || tempTypeArgument.equals("0"))
+                thermostat->setMeasurementType(Thermostat::Measurement::TemperatureUnit);
         }
         
         // Push changes by manually updating the instance.
@@ -179,8 +192,12 @@ String GetStatusData()
     statusData += thermostat->temperature().value();
     statusData += ",\"target\":";
     statusData += thermostat->targetTemperature().value();
-    statusData += ",\"scale\":\"K\",\"delay\":";
-    statusData += "\"?\"},\"humidity\":{\"current\":";
+    statusData += ",\"scale\":\"K\",\"delay\":\"?\"}";
+    statusData += ",\"humiture\":";
+    statusData += thermostat->humiture().value();
+    statusData += ",\"measurement\":";
+    statusData += thermostat->measurementType();
+    statusData += ",\"humidity\":{\"current\":";
     statusData += thermometer->humidity();
     statusData += "},\"mode\":";
     statusData += thermostat->mode();

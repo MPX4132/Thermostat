@@ -140,24 +140,32 @@ int Thermostat::execute(Scheduler::Time const updateTime)
 
     // Read this only once every update, since the sensor may need to timeout for a bit.
     // In my case, the DHT22 needs to timeout for about two seconds after a read cycle.
-    Temperature<float> const currentTemperature = (this->measurementType() == Thermostat::Measurement::TemperatureUnit)? this->temperature() : this->humiture();
+    Temperature<float> const currentTemperature = this->measurementType()? this->humiture() : this->temperature();
     
 #if defined DEBUG && defined THERMOSTAT_LOGS
-    float const currentHumidity = this->humidity();
 #ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Thermostat <" << std::hex << this << ">] T:" << std::dec << currentTemperature.value(Temperature<float>::Scale::Fahrenheit) << "F -> " << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F, H:" << currentHumidity << ", M:" << this->mode() << ", S:" << this->status() << " at " << updateTime << std::endl;
+    std::cout << "[Thermostat <" << std::hex << this << ">] Temperature:" << std::dec << this->temperature().value(Temperature<float>::Scale::Fahrenheit) << "F, Humiture:" << this->humiture().value(Temperature<float>::Scale::Fahrenheit) << "F, Humidity:" << this->humidity() << "%" << std::endl;
+    std::cout << "[Thermostat <" << std::hex << this << ">] Target:" << std::dec << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F, Measurement:" << this->measurementType() << ", Mode:" << this->mode() << ", Status:" << this->status() << " at " << updateTime << std::endl;
 #else
     Serial.print("[Thermostat <");
     Serial.print((unsigned long) this, HEX);
-    Serial.print(">] T:");
-    Serial.print(currentTemperature.value(Temperature<float>::Scale::Fahrenheit));
-    Serial.print("F -> ");
+    Serial.print(">] Temperature:");
+    Serial.print(this->temperature().value(Temperature<float>::Scale::Fahrenheit));
+    Serial.print("F, Humiture:");
+    Serial.print(this->humiture().value(Temperature<float>::Scale::Fahrenheit));
+    Serial.print("F, Humidity:");
+    Serial.print(this->humidity());
+    Serial.println("%");
+    
+    Serial.print("[Thermostat <");
+    Serial.print((unsigned long) this, HEX);
+    Serial.print(">] Target:");
     Serial.print(this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit));
-    Serial.print("F, H:");
-    Serial.print(currentHumidity);
-    Serial.print(", M:");
+    Serial.print("F, Measurement:");
+    Serial.print(this->measurementType());
+    Serial.print(", Mode:");
     Serial.print(this->mode());
-    Serial.print(", S:");
+    Serial.print(", Status:");
     Serial.print(this->status());
     Serial.print(" at ");
     Serial.println(updateTime);

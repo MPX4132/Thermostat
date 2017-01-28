@@ -33,6 +33,8 @@ Temperature<float> Thermometer::humiture()
     // (obtained from Wikipedia), and integrates more temperatures.
     // NOTE: ±3 degrees between 70-115F, and humidity of 0-80%
     // NOTE: [Functional] range is for temperatures below 150F.
+    if (t < 70 || t > 115) return Temperature<float>(t, Temperature<float>::Scale::Fahrenheit);
+    
     return Temperature<float>(0.363445176f +
                               0.988622465f * t +
                               4.777114035f * h +

@@ -21,6 +21,11 @@ time(time)
     
 }
 
+#ifdef max // To the one who made a lowercase macro: Fuck you.
+#pragma push_macro("max")
+#undef max
+#define RESTORE_max_P1
+#endif
 bool Actuator::ready() const
 {
     for (Pin::Set::value_type const &pair : this->_pins)
@@ -32,10 +37,15 @@ bool Actuator::ready() const
     
     // Check instance's timeout has elapsed and is now capable of actuating,
     // but we must consider a potential integer overflow from the MCU clock.
-    return (currentTime > this->_actuateTime)?
-    ((currentTime - this->_actuateTime) > this->_actuateTimeout) :
-    (this->_actuateTime + this->_actuateTimeout) < currentTime; // Overflowed
+    Scheduler::Time const elapsedTime = (currentTime > this->_actuateTime)?
+    (currentTime - this->_actuateTime) :
+    (std::numeric_limits<Scheduler::Time>::max() - this->_actuateTime) + currentTime;
+    
+    return elapsedTime > this->_actuateTimeout;
 }
+#ifdef RESTORE_max_P1
+#pragma pop_macro("max")
+#endif
 
 void Actuator::actuate(Actuator::Actions const &actions)
 {
@@ -81,7 +91,7 @@ void Actuator::schedulerDequeuedEvent(Scheduler * const scheduler,
 #ifdef max // To the one who made a lowercase macro: Fuck you.
 #pragma push_macro("max")
 #undef max
-#define RESTORE_max
+#define RESTORE_max_P2
 #endif
 Actuator::Actuator(Pin::Arrangement const &pins, Scheduler::Time const actuateTimeout):
 _pins(Pin::AllocateSet(pins)),
@@ -92,7 +102,7 @@ _actuateTime(std::numeric_limits<Scheduler::Time>::max() - (actuateTimeout - 1))
 {
     this->_scheduler.delegate = static_cast<Scheduler::Delegate *>(this);
 }
-#ifdef RESTORE_max
+#ifdef RESTORE_max_P2
 #pragma pop_macro("max")
 #endif
 

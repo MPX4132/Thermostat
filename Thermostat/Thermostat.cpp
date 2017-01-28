@@ -177,10 +177,10 @@ int Thermostat::execute(Scheduler::Time const updateTime)
         case Off: this->_status = this->_standby();
             break;
             
-        case Cool: this->_status = this->_setCooler(currentTemperature > this->targetTemperature());
+        case Heat: this->_status = this->_setHeater(currentTemperature < this->targetTemperature());
             break;
             
-        case Heat: this->_status = this->_setHeater(currentTemperature < this->targetTemperature());
+        case Cool: this->_status = this->_setCooler(currentTemperature > this->targetTemperature());
             break;
             
         case Auto: {

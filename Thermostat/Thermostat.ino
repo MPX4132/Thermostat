@@ -47,6 +47,7 @@ void setup()
 
     // Begin WiFi configuration and do not continue until we've connected successfully.
     Serial.println("[WIFI] Setting radio configuration, please wait...");
+    WiFi.mode(WIFI_STA); // Configure as a WIFI station, rather than an access point. 
     WiFi.begin(WIFI_SSID, WIFI_PASS); // Configure and activate WIFI for connection.
 
     // Check WIFI connection state, and wait if it's not yet ready.

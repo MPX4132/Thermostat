@@ -42,7 +42,8 @@ class Pin
       Input
     };
 
-    struct Configuration {
+    struct Configuration
+    {
       Mode mode;
       Value value;
     };

@@ -21,13 +21,14 @@ void delayMicroseconds(unsigned long time)
 Sensor::Data DHT22::sense() {
     
     // Assure all pins are ready to use (data line).
+    // If the sensor isn't ready, return empty data.
     if (!this->ready()) return Sensor::Data();
     
     Sensor::Data data(5); // Buffer for data (40-bit)
     
     // Prepare data pin for operation.
-    //Pin &dataPin = this->_pins[this->_pinout[0]];
-    Pin &dataPin = *(this->_pins[this->_pinout[0]]);
+    //Pin &dataPin = this->_pins[this->_pinout[DHT22::Pinout::Data]];
+    Pin &dataPin = *(this->_pins[this->_pinout[DHT22::Pinout::Data]]);
     dataPin.setMode(Pin::Mode::Output);
     
     // ============================================================
@@ -171,7 +172,7 @@ Sensor::Data DHT22::sense() {
         Serial.println(humidity);
 #endif
 #endif
-        this->_temperature = Temperature<float>(temperature, Temperature<float>::Scale::Celsius);
+        this->_temperature = Thermometer::TemperatureUnit(temperature, Thermometer::TemperatureUnit::Scale::Celsius);
         this->_humidity = humidity;
     }
 #if defined DEBUG && defined DHT22_LOGS
@@ -192,14 +193,17 @@ Sensor::Data DHT22::sense() {
 
 bool DHT22::DHT22::_validData(Sensor::Data const &data)
 {
-    return (data.size() == 5) && (data[4] == static_cast<Sensor::Byte>(data[0] + data[1] + data[2] + data[3]));
+    if (data.size() != 5) return false; // We require exactly 5 bytes of data.
+
+    // The 5th (checksum) byte must equal to the sum of the first four bytes.
+    return data[4] == static_cast<Sensor::Byte>(data[0] + data[1] + data[2] + data[3]);
 }
 
-DHT22::DHT22(Pin::Identifier const pin):
-Thermometer({pin},
+DHT22::DHT22(Pin::Identifier const dataPin):
+Thermometer({dataPin},
             DHT22_TIMEOUT,
-            std::make_pair(Temperature<float>(-40, Temperature<float>::Scale::Celsius),
-                           Temperature<float>(80, Temperature<float>::Scale::Celsius)))
+            std::make_pair(Thermometer::TemperatureUnit(-40, Thermometer::TemperatureUnit::Scale::Celsius),
+                           Thermometer::TemperatureUnit(80, Thermometer::TemperatureUnit::Scale::Celsius)))
 {
     
 }

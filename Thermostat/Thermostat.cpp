@@ -40,9 +40,9 @@ float Thermostat::humidity()
     return humidity;
 }
 
-Temperature<float> Thermostat::humiture()
+Thermometer::TemperatureUnit Thermostat::humiture()
 {
-    Temperature<float> humiture = 0;
+    Thermometer::TemperatureUnit humiture = 0;
     
     for (Thermometer * const thermometer : this->thermometers)
     {
@@ -55,9 +55,9 @@ Temperature<float> Thermostat::humiture()
 }
 
 
-Temperature<float> Thermostat::temperature()
+Thermometer::TemperatureUnit Thermostat::temperature()
 {
-    Temperature<float> temperature = 0;
+    Thermometer::TemperatureUnit temperature = 0;
     
     for (Thermometer * const thermometer : this->thermometers)
     {
@@ -69,26 +69,26 @@ Temperature<float> Thermostat::temperature()
     return temperature;
 }
 
-Temperature<float> Thermostat::targetTemperature() const
+Thermometer::TemperatureUnit Thermostat::targetTemperature() const
 {
     return this->_targetTemperature;
 }
 
-void Thermostat::setTargetTemperature(Temperature<float> const targetTemperature,
+void Thermostat::setTargetTemperature(Thermometer::TemperatureUnit const targetTemperature,
                                       float const targetTemperatureThreshold)
 {
     this->_targetTemperatureThreshold = targetTemperatureThreshold;
     this->_targetTemperature = targetTemperature;
 }
 
-Thermostat::Measurement Thermostat::measurementType() const
+Thermostat::PerceptionIndex Thermostat::perceptionIndex() const
 {
-    return this->_measurmentType;
+    return this->_perceptionIndex;
 }
 
-void Thermostat::setMeasurementType(Thermostat::Measurement const measurementType)
+void Thermostat::setPerceptionIndex(Thermostat::PerceptionIndex const perceptionIndex)
 {
-    this->_measurmentType = measurementType;
+    this->_perceptionIndex = perceptionIndex;
 }
 
 int Thermostat::update(Scheduler::Time const time)
@@ -140,19 +140,33 @@ int Thermostat::execute(Scheduler::Time const updateTime)
 
     // Read this only once every update, since the sensor may need to timeout for a bit.
     // In my case, the DHT22 needs to timeout for about two seconds after a read cycle.
-    Temperature<float> const currentTemperature = this->measurementType()? this->humiture() : this->temperature();
+    Thermometer::TemperatureUnit const currentTemperature = this->perceptionIndex()?
+        this->humiture() : this->temperature();
     
 #if defined DEBUG && defined THERMOSTAT_LOGS
 #ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Thermostat <" << std::hex << this << ">] Temperature:" << std::dec << this->temperature().value(Temperature<float>::Scale::Fahrenheit) << "F, Humiture:" << this->humiture().value(Temperature<float>::Scale::Fahrenheit) << "F, Humidity:" << this->humidity() << "%" << std::endl;
-    std::cout << "[Thermostat <" << std::hex << this << ">] Target:" << std::dec << this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit) << "F, Measurement:" << this->measurementType() << ", Mode:" << this->mode() << ", Status:" << this->status() << " at " << updateTime << std::endl;
+    std::cout << "[Thermostat <" << std::hex << this
+        << ">] Temperature:"
+        << std::dec << this->temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit)
+        << "F, Humiture:"
+        << this->humiture().value(Thermometer::TemperatureUnit::Scale::Fahrenheit)
+        << "F, Humidity:"
+        << this->humidity() << "%" << std::endl;
+    std::cout << "[Thermostat <" << std::hex << this
+        << ">] Target:"
+        << std::dec << this->targetTemperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit)
+        << "F, Perceivable Index:"
+        << this->perceptionIndex()
+        << ", Mode:" << this->mode()
+        << ", Status:" << this->status()
+        << " at " << updateTime << std::endl;
 #else
     Serial.print("[Thermostat <");
     Serial.print((unsigned long) this, HEX);
     Serial.print(">] Temperature:");
-    Serial.print(this->temperature().value(Temperature<float>::Scale::Fahrenheit));
+    Serial.print(this->temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit));
     Serial.print("F, Humiture:");
-    Serial.print(this->humiture().value(Temperature<float>::Scale::Fahrenheit));
+    Serial.print(this->humiture().value(Thermometer::TemperatureUnit::Scale::Fahrenheit));
     Serial.print("F, Humidity:");
     Serial.print(this->humidity());
     Serial.println("%");
@@ -160,7 +174,7 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     Serial.print("[Thermostat <");
     Serial.print((unsigned long) this, HEX);
     Serial.print(">] Target:");
-    Serial.print(this->targetTemperature().value(Temperature<float>::Scale::Fahrenheit));
+    Serial.print(this->targetTemperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit));
     Serial.print("F, Measurement:");
     Serial.print(this->measurementType());
     Serial.print(", Mode:");
@@ -194,7 +208,7 @@ int Thermostat::execute(Scheduler::Time const updateTime)
             }
         }   break;
             
-        default: this->_status = this->_standby(); // Fuck you too.
+        default: this->_status = this->_standby();
             break;
     }
     
@@ -211,7 +225,7 @@ Thermostat::Thermostat(Pin::Arrangement const &pins,
 Actuator(pins),
 Scheduler::Daemon(0, executeTimeInterval),
 thermometers(thermometers),
-_measurmentType(Thermostat::Measurement::TemperatureUnit),
+_perceptionIndex(Thermostat::PerceptionIndex::TemperatureIndex),
 _status(Thermostat::Status::Standby),
 _mode(Thermostat::Mode::Off)
 {

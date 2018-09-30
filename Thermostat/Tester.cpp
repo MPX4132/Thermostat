@@ -23,7 +23,7 @@ Thermostat * thermostat;
 void setup()
 {
     thermometer = new DHT22(2);
-    thermostat = new Thermostat({14,12,13}, {thermometer});
+    thermostat = new Thermostat({14, 12, 13}, {thermometer});
     
     thermostat->setTargetTemperature(Temperature<float>(72, Temperature<float>::Scale::Fahrenheit));
     thermostat->setMode(Thermostat::Mode::Auto);

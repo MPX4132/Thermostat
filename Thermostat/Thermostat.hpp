@@ -50,11 +50,11 @@ public:
         Cooling,
         Stasis
     };
-    
-    enum Measurement
+
+    enum PerceptionIndex
     {
-        TemperatureUnit,	// Control based on temperature
-        HeatIndexUnit		// Control based on heat index
+        TemperatureIndex,   // Control based on temperature
+        HeatIndex           // Control based on heat index
     };
     
     
@@ -76,31 +76,32 @@ public:
     float humidity();
     
     // This method returns the average humiture of all thermometers.
-    Temperature<float> humiture();
+    Thermometer::TemperatureUnit humiture();
     
     // This method returns the average temperature of all thermometers.
-    Temperature<float> temperature();
+    Thermometer::TemperatureUnit temperature();
     
-    Temperature<float> targetTemperature() const;
-    void setTargetTemperature(Temperature<float> const targetTemperature,
+    Thermometer::TemperatureUnit targetTemperature() const;
+    void setTargetTemperature(Thermometer::TemperatureUnit const targetTemperature,
                               // About a degree (F/C) of threshold
                               float const targetTemperatureThreshold = 1);
-    
-    Measurement measurementType() const;
-    void setMeasurementType(Measurement const measurementType = TemperatureUnit);
+
+    PerceptionIndex perceptionIndex() const;
+    void setPerceptionIndex(PerceptionIndex const perceptionIndex = TemperatureIndex);
     
     int update(Scheduler::Time const time);
     
     // The pin order is as follows by default: {FAN call, COOL call, HEAT call}
+    // By default, the thermostat updates every 5 minutes (300000000us).
     Thermostat(Pin::Arrangement const &pins,
                Thermometers const &thermometers,
                Scheduler::Time const executeTimeInterval = 300000000);
     virtual ~Thermostat();
     
 protected:
-    Temperature<float> _targetTemperature;
+    Thermometer::TemperatureUnit _targetTemperature;
     float _targetTemperatureThreshold;
-    Measurement _measurmentType;
+    PerceptionIndex _perceptionIndex;
     Status _status;
     Mode _mode;
     

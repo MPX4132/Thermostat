@@ -34,6 +34,11 @@
 class DHT22 : public Thermometer
 {
 public:
+
+    enum Pinout
+    {
+        Data
+    };
     
     // Sense is a blocking method since the sensor must retrive
     // information in microseconds and delays could corrupt the data.
@@ -41,7 +46,7 @@ public:
     // but the specs say we must wait ~2 seconds before retrying.
     Sensor::Data sense();
     
-    DHT22(Pin::Identifier const pin);
+    DHT22(Pin::Identifier const dataPin);
     virtual ~DHT22();
     
 protected:

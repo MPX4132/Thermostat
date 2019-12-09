@@ -17,23 +17,25 @@
 #include "Identifiable.hpp"
 #include "Actuator.hpp"
 
-#ifdef HARDWARE_INDEPENDENT
-#include <iostream>
-#else
+#if defined(MJB_ARDUINO_LIB_API)
 #include <Arduino.h>
+#else
+#include <iostream>
 #endif
 
 // =============================================================================
 // Thermostat : This class abstracts the functionality of an HVAC control system
 // and provides a simplistic interface for interacting with it.
 // =============================================================================
-class Thermostat : protected Actuator, protected Scheduler::Daemon
+class Thermostat :
+protected Actuator,
+protected Scheduler::Daemon
 {
 public:
     // ================================================================
     // Thermostat Types
     // ================================================================
-    typedef std::vector<Thermometer *> Thermometers;
+    typedef std::vector<std::shared_ptr<Thermometer>> Thermometers;
     
     enum Mode
     {
@@ -56,7 +58,20 @@ public:
         TemperatureIndex,   // Control based on temperature
         HeatIndex           // Control based on heat index
     };
-    
+
+    enum SignalLine
+    {
+        FanCall,
+        CoolCall,
+        HeatCall
+    };
+
+    enum ExecutionCode
+    {
+        Success,
+        SignalLinesMissing,     // Not enough pins (3; cool, fan, heat)
+        SignalLinesNotReady,    // A pin isn't ready to actuate.
+    };
     
     // ================================================================
     // Thermostat Members
@@ -82,7 +97,7 @@ public:
     Thermometer::TemperatureUnit temperature();
     
     Thermometer::TemperatureUnit targetTemperature() const;
-    void setTargetTemperature(Thermometer::TemperatureUnit const targetTemperature,
+    void setTargetTemperature(Thermometer::TemperatureUnit const &targetTemperature,
                               // About a degree (F/C) of threshold
                               float const targetTemperatureThreshold = 1);
 

@@ -8,7 +8,7 @@
 
 #include "DHT22.hpp"
 
-#ifdef HARDWARE_INDEPENDENT
+#if ! defined(MJB_ARDUINO_LIB_API)
 void delayMicroseconds(unsigned long time)
 {
     // Fake test function.
@@ -22,12 +22,18 @@ Sensor::Data DHT22::sense() {
     
     // Assure all pins are ready to use (data line).
     // If the sensor isn't ready, return empty data.
-    if (!this->ready()) return Sensor::Data();
+    if (!this->ready()) {
+#if defined(MJB_DEBUG_LOGGING_DHT22)
+        MJB_DEBUG_LOG("[DHT22 <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE(">] WARNING: Sensor not ready!");
+#endif
+        return Sensor::Data();
+    }
     
     Sensor::Data data(5); // Buffer for data (40-bit)
     
     // Prepare data pin for operation.
-    //Pin &dataPin = this->_pins[this->_pinout[DHT22::Pinout::Data]];
     Pin &dataPin = *(this->_pins[this->_pinout[DHT22::Pinout::Data]]);
     dataPin.setMode(Pin::Mode::Output);
     
@@ -56,12 +62,10 @@ Sensor::Data DHT22::sense() {
     
     // Check for low, if up return nothing.
     if (dataPin.state()) {
-#if defined DEBUG && defined DHT22_LOGS
-#ifndef HARDWARE_INDEPENDENT
-        Serial.print("[DHT22 <");
-        Serial.print((unsigned long) this);
-        Serial.println(">] ERROR: No reply from sensor!");
-#endif
+#if defined(MJB_DEBUG_LOGGING_DHT22)
+        MJB_DEBUG_LOG("[DHT22 <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE(">] ERROR: No reply from sensor!");
 #endif
         return Sensor::Data();
     }
@@ -74,12 +78,10 @@ Sensor::Data DHT22::sense() {
     
     // Check for high, if low, return nothing.
     if (!dataPin.state()) {
-#if defined DEBUG && defined DHT22_LOGS
-#ifndef HARDWARE_INDEPENDENT
-        Serial.print("[DHT22 <");
-        Serial.print((unsigned long) this);
-        Serial.println(">] ERROR: Invalid reply from sensor!");
-#endif
+#if defined(MJB_DEBUG_LOGGING_DHT22)
+        MJB_DEBUG_LOG("[DHT22 <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE(">] ERROR: Invalid reply from sensor!");
 #endif
         return Sensor::Data();
     }
@@ -113,77 +115,71 @@ Sensor::Data DHT22::sense() {
     // NOTE: Temperature is in Celcius and is x10 scaled, including humidity.
     float const humidity = static_cast<float>(((static_cast<unsigned short>(data[0]) << 8) | data[1])) / 10;
     float const temperature = static_cast<float>(((static_cast<unsigned short>(data[2]) << 8) | data[3])) / 10;
-    
-#if defined DEBUG && defined DHT22_LOGS
-#ifndef HARDWARE_INDEPENDENT
-    
-    Serial.print("[DHT22 <");
-    Serial.print((unsigned long) this);
-    Serial.print(">] All Data: ");
+
+#if defined(MJB_DEBUG_LOGGING_DHT22)
+    MJB_DEBUG_LOG("[DHT22 <");
+    MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+    MJB_DEBUG_LOG(">] All Data: ");
+
     for (Sensor::Byte &byte : data)
     {
-        Serial.print(byte, BIN);
-        Serial.print(" ");
+        MJB_DEBUG_LOG_FORMAT(byte, MJB_DEBUG_LOG_BIN);
+        MJB_DEBUG_LOG(" ");
     }
     
-    Serial.println("");
+    MJB_DEBUG_LOG_LINE("");
     
-    Serial.print("[DHT22 <");
-    Serial.print((unsigned long) this);
-    Serial.print(">] RHu Data: ");
-    Serial.print(data[0], BIN);
-    Serial.print(" ");
-    Serial.print(data[1], BIN);
-    Serial.print(" = ");
+    MJB_DEBUG_LOG("[DHT22 <");
+    MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+    MJB_DEBUG_LOG(">] RHu Data: ");
+    MJB_DEBUG_LOG_FORMAT(data[0], MJB_DEBUG_LOG_BIN);
+    MJB_DEBUG_LOG(" ");
+    MJB_DEBUG_LOG_FORMAT(data[1], MJB_DEBUG_LOG_BIN);
+    MJB_DEBUG_LOG(" = ");
     
-    Serial.println(humidity);
+    MJB_DEBUG_LOG_LINE(humidity);
     
-    Serial.print("[DHT22 <");
-    Serial.print((unsigned long) this);
-    Serial.print(">] Tmp Data: ");
-    Serial.print(data[2], BIN);
-    Serial.print(" ");
-    Serial.print(data[3], BIN);
-    Serial.print(" = ");
+    MJB_DEBUG_LOG("[DHT22 <");
+    MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+    MJB_DEBUG_LOG(">] Tmp Data: ");
+    MJB_DEBUG_LOG_FORMAT(data[2], MJB_DEBUG_LOG_BIN);
+    MJB_DEBUG_LOG(" ");
+    MJB_DEBUG_LOG_FORMAT(data[3], MJB_DEBUG_LOG_BIN);
+    MJB_DEBUG_LOG(" = ");
     
-    Serial.println(temperature);
+    MJB_DEBUG_LOG_LINE(temperature);
     
-    Serial.print("[DHT22 <");
-    Serial.print((unsigned long) this);
-    Serial.print(">] Chk Data: ");
-    Serial.print(data[4], BIN);
-    Serial.print(" = ");
-    Serial.println((unsigned short) data[4]);
-#endif
+    MJB_DEBUG_LOG("[DHT22 <");
+    MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+    MJB_DEBUG_LOG(">] Chk Data: ");
+    MJB_DEBUG_LOG_FORMAT(data[4], MJB_DEBUG_LOG_BIN);
+    MJB_DEBUG_LOG(" = ");
+    MJB_DEBUG_LOG_LINE((unsigned short) data[4]);
 #endif
     
     if (this->_validData(data)) // Update cached values only if valid data received.
     {
-#if defined DEBUG && defined DHT22_LOGS
-#ifndef HARDWARE_INDEPENDENT
-        Serial.print("[DHT22 <");
-        Serial.print((unsigned long) this);
-        Serial.println(">] Data checks out.");
-        Serial.print("[DHT22 <");
-        Serial.print((unsigned long) this);
-        Serial.print(">] Cached values updating to T: ");
-        Serial.print(temperature);
-        Serial.print(" H: ");
-        Serial.println(humidity);
-#endif
+#if defined(MJB_DEBUG_LOGGING_DHT22)
+        MJB_DEBUG_LOG("[DHT22 <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE(">] Data checks out.");
+        MJB_DEBUG_LOG("[DHT22 <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG(">] Cached values updating to T: ");
+        MJB_DEBUG_LOG(temperature);
+        MJB_DEBUG_LOG(" H: ");
+        MJB_DEBUG_LOG_LINE(humidity);
 #endif
         this->_temperature = Thermometer::TemperatureUnit(temperature, Thermometer::TemperatureUnit::Scale::Celsius);
         this->_humidity = humidity;
     }
-#if defined DEBUG && defined DHT22_LOGS
-#ifndef HARDWARE_INDEPENDENT
+#if defined(MJB_DEBUG_LOGGING_DHT22)
     else
     {
-        Serial.print("[DHT22 <");
-        Serial.print((unsigned long) this);
-        Serial.println(">] ERROR: Data is corrupted!");
+        MJB_DEBUG_LOG("[DHT22 <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE(">] ERROR: Data is corrupted!");
     }
-#endif
 #endif
     
     Sensor::sense(); // To activate a sensor timeout.

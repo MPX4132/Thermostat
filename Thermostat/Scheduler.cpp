@@ -11,41 +11,91 @@
 // =============================================================================
 // Scheduler : Static Variables Declaration
 // =============================================================================
-std::set<Scheduler *> Scheduler::_InstanceRegister;
-std::map<Scheduler::Event *, Scheduler *> Scheduler::_AssociationRegister;
+std::set<Scheduler * const> &Scheduler::_InstanceRegister()
+{
+    static std::set<Scheduler * const> _instanceRegister;
+    return _instanceRegister;
+}
 
+#if defined(MJB_MULTITHREAD_CAPABLE)
+std::mutex Scheduler::_InstanceRegisterLock;
+#endif
 
 // =============================================================================
 // Scheduler::Event : Implementation
 // =============================================================================
 Scheduler::Time Scheduler::Event::executeTime() const
 {
-    return this->_executeTime;
+    return _executeTime;
 }
 
-void Scheduler::Event::setExecuteTime(Scheduler::Time const executeTime)
+bool Scheduler::Event::setExecuteTime(Scheduler::Time const executeTime)
 {
     Time const lastExecuteTime = this->executeTime();
-    this->_executeTime = executeTime;
-    if (lastExecuteTime != this->executeTime()) this->_executeTimeReprioritize(lastExecuteTime);
+
+    // If the event's execute time changed, we've got to reprioritize.
+    if (lastExecuteTime != executeTime)
+    {
+        std::weak_ptr<Scheduler> scheduler = _scheduler;
+        if (unschedule())
+        {
+            _executeTime = executeTime; // Update execute time.
+            _executeTimeDidChange(executeTime - lastExecuteTime);
+
+             return schedule(scheduler);
+        }
+    }
+
+    return false;
 }
 
-void Scheduler::Event::_executeTimeReprioritize(Scheduler::Time const lastPriority)
+std::weak_ptr<Scheduler> const &Scheduler::Event::scheduler() const
 {
-    Scheduler::_ReprioritizeEvent(this, lastPriority);
+    return _scheduler;
+}
+
+bool Scheduler::Event::schedule(std::weak_ptr<Scheduler> const &scheduler)
+{
+    // Retrieve the scheduler to enqueue the event.
+    std::shared_ptr<Scheduler> const valid_scheduler = scheduler.lock();
+
+    return valid_scheduler && valid_scheduler->enqueue(std::static_pointer_cast<Event>(self()));
+}
+
+bool Scheduler::Event::unschedule()
+{
+    // Retrieve the scheduler to dequeue the event.
+    std::shared_ptr<Scheduler> const valid_scheduler = _scheduler.lock();
+
+    return valid_scheduler && valid_scheduler->dequeue(std::static_pointer_cast<Event>(self()));
+}
+
+bool Scheduler::Event::setScheduler(std::weak_ptr<Scheduler> const &scheduler)
+{
+    std::shared_ptr<Scheduler> const _valid_scheduler = _scheduler.lock();
+
+    if ((!_valid_scheduler) || (!_valid_scheduler->scheduled(std::static_pointer_cast<Event>(self()))))
+    {
+        _scheduler = scheduler;
+        return true;
+    }
+    return false;
+}
+
+void Scheduler::Event::_executeTimeDidChange(Scheduler::Time const executeTimeDelta)
+{
+
 }
 
 Scheduler::Event::Event(Scheduler::Time const executeTime):
 _executeTime(executeTime)
 {
     Identifiable<Event>::Register(this); // RTTI Substitute
-    Scheduler::_AssociateEventToScheduler(this);
 }
 
 Scheduler::Event::~Event()
 {
     Identifiable<Event>::Unregister(this); // RTTI Substitute
-    Scheduler::_DissasociateEvent(this);
 }
 
 
@@ -59,12 +109,20 @@ Scheduler::Time Scheduler::Daemon::executeTimeInterval() const
 
 void Scheduler::Daemon::setExecuteTimeInterval(Scheduler::Time const executeTimeInterval)
 {
+    Scheduler::Time const lastExecuteTimeInterval = this->executeTimeInterval();
+
     this->_executeTimeInterval = executeTimeInterval;
+    this->_executeTimeIntervalDidChange(executeTimeInterval - lastExecuteTimeInterval);
 }
 
 bool Scheduler::Daemon::finished() const
 {
     return false;
+}
+
+void Scheduler::Daemon::_executeTimeIntervalDidChange(Scheduler::Time const executeTimeIntervalDelta)
+{
+
 }
 
 Scheduler::Daemon::Daemon(Scheduler::Time const executeTime,
@@ -84,31 +142,32 @@ Scheduler::Daemon::~Daemon()
 // =============================================================================
 // Scheduler::Delegate : Implementation
 // =============================================================================
-void Scheduler::Delegate::schedulerStartingEvent(Scheduler * const scheduler,
-                                                 Scheduler::Event * const event)
+void SchedulerDelegate::schedulerStartingEvent(Scheduler * const scheduler,
+                                               std::shared_ptr<Scheduler::Event> const &event)
 {
     return; // By default, skip.
 }
 
-void Scheduler::Delegate::schedulerCompletedEvent(Scheduler * const scheduler,
-                                                  Scheduler::Event * const event)
+void SchedulerDelegate::schedulerCompletedEvent(Scheduler * const scheduler,
+                                                std::shared_ptr<Scheduler::Event> const &event,
+                                                int result)
 {
     return; // By default, skip.
 }
 
-void Scheduler::Delegate::schedulerEnqueuedEvent(Scheduler * const scheduler,
-                                                 Scheduler::Event * const event)
+void SchedulerDelegate::schedulerEnqueuedEvent(Scheduler * const scheduler,
+                                               std::shared_ptr<Scheduler::Event> const &event)
 {
     return; // By default, skip.
 }
 
-void Scheduler::Delegate::schedulerDequeuedEvent(Scheduler * const scheduler,
-                                                 Scheduler::Event * const event)
+void SchedulerDelegate::schedulerDequeuedEvent(Scheduler * const scheduler,
+                                               std::shared_ptr<Scheduler::Event> const &event)
 {
     return; // By default, skip.
 }
 
-Scheduler::Delegate::~Delegate()
+SchedulerDelegate::~SchedulerDelegate()
 {
     
 }
@@ -139,7 +198,7 @@ priority(task.priority)
     
 }
 
-Scheduler::Task::Task(Scheduler::Event * const event):
+Scheduler::Task::Task(std::shared_ptr<Scheduler::Event> const &event):
 priority(event->executeTime())
 {
     this->events.insert(event);
@@ -155,122 +214,114 @@ priority(priority)
 // =============================================================================
 // Scheduler : Implementation
 // =============================================================================
-bool Scheduler::enqueue(Scheduler::Event * const event)
+bool Scheduler::enqueue(std::shared_ptr<Scheduler::Event> const &event)
 {
-    if (!event) return false;
-    
-    if (!Scheduler::_EnqueueTasksEvent(this->_tasks, event)) return false;
-    
-    // Associate enqueueing Event to the Scheduler instance on registry.
-    Scheduler::_AssociateEventToScheduler(event, this);
-    
-    if (this->delegate) this->delegate->schedulerEnqueuedEvent(this, event);
-    
-    return true;
+    bool enqueuedEvent = false; // Assume failure.
+
+    if (Scheduler::_EnqueueTasksEvent(_tasks, event))
+    {
+        if (event->setScheduler(std::static_pointer_cast<Scheduler>(self())))
+        {
+            _delegate([this, &event](std::shared_ptr<SchedulerDelegate> const &delegate) -> bool {
+                delegate->schedulerEnqueuedEvent(this, event);
+                return true;
+            });
+
+            enqueuedEvent = true;
+        }
+    }
+
+    return enqueuedEvent;
 }
 
-bool Scheduler::dequeue(Scheduler::Event * const event)
+bool Scheduler::dequeue(std::shared_ptr<Scheduler::Event> const &event)
 {
-    if (!Scheduler::_DequeueTasksEvent(this->_tasks, event))
+    bool dequeuedEvent = false; // Assume failure.
+
+    if (Scheduler::_DequeueTasksEvent(_tasks, event))
     {
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-        std::cout << "[Scheduler <" << std::hex << this << ">] ERROR: Event <" << std::hex << event << "> WASN'T FOUND (MISSING)!!!" << std::endl;
-#else
-        Serial.print("[Scheduler <");
-        Serial.print((unsigned long) this, HEX);
-        Serial.print(">] ERROR: Event <");
-        Serial.print((unsigned long) event);
-        Serial.print("> WASN'T FOUND (MISSING)!!!");
-#endif
-#endif
-        return false;
+        if (event->setScheduler(std::weak_ptr<Scheduler>()))
+        {
+            _delegate([this, &event](std::shared_ptr<SchedulerDelegate> const &delegate) -> bool {
+                delegate->schedulerDequeuedEvent(this, event);
+                return true;
+            });
+
+            dequeuedEvent = true;
+        }
     }
-    
-    // Disassociate Event from Scheduler instance on registry.
-    Scheduler::_AssociateEventToScheduler(event, nullptr);
-    
-    if (this->delegate) this->delegate->schedulerDequeuedEvent(this, event);
-    
-    return true;
+
+    return dequeuedEvent;
+}
+
+bool Scheduler::scheduled(std::shared_ptr<Scheduler::Event> const &event) const
+{
+    std::set<Scheduler::Task>::const_iterator const &task_i = _tasks.find(event->executeTime());
+    return (task_i != this->_tasks.end()) && task_i->events.count(event) > 0;
 }
 
 void Scheduler::UpdateInstances(Scheduler::Time const time)
 {
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << std::endl << "==============" << std::endl;
-#else
-    Serial.println("");
-    Serial.println("==============");
-#endif
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+    MJB_DEBUG_LOG_LINE("");
+    MJB_DEBUG_LOG_LINE("==============");
 #endif
     
-    for (Scheduler * const scheduler : Scheduler::_InstanceRegister)
+    for (Scheduler * const scheduler : Scheduler::_InstanceRegister())
     {
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-        std::cout << "[Scheduler <" << std::hex << scheduler << "> IS STARTING]" << std::endl;
+
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+        MJB_DEBUG_LOG("[scheduler <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) scheduler, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE("> is starting]");
         for (Scheduler::Task const &task : scheduler->_tasks)
         {
-            std::cout << "[Scheduler <" << std::hex << scheduler << ">] Holding " << task.events.size() << " Event(s) <P: " << task.priority << "> pending runtime." << std::endl;
+            MJB_DEBUG_LOG("[scheduler <");
+            MJB_DEBUG_LOG_FORMAT((unsigned long) scheduler, MJB_DEBUG_LOG_HEX);
+            MJB_DEBUG_LOG(">] holding ");
+            MJB_DEBUG_LOG(task.events.size());
+            MJB_DEBUG_LOG(" event(s) <p: ");
+            MJB_DEBUG_LOG(task.priority);
+            MJB_DEBUG_LOG_LINE("> pending runtime.");
         }
-#else
-        Serial.print("[Scheduler <");
-        Serial.print((unsigned long) scheduler, HEX);
-        Serial.println("> IS STARTING]");
-        for (Scheduler::Task const &task : scheduler->_tasks)
-        {
-            Serial.print("[Scheduler <");
-            Serial.print((unsigned long) scheduler, HEX);
-            Serial.print(">] Holding ");
-            Serial.print(task.events.size());
-            Serial.print(" Event(s) <P: ");
-            Serial.print(task.priority);
-            Serial.println("> pending runtime.");
-        }
-#endif
 #endif
         scheduler->_processEventsForTime(time);
         
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-        std::cout << "[Scheduler <" << std::hex << scheduler << "> IS PAUSING]" << std::endl;
-#else
-        Serial.print("[Scheduler <");
-        Serial.print((unsigned long) scheduler, HEX);
-        Serial.println("> IS PAUSING]");
-#endif
+
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+        MJB_DEBUG_LOG("[scheduler <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) scheduler, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE("> is pausing]");
 #endif
     }
     
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << "==============" << std::endl << std::endl;
-#else
-    Serial.println("==============");
-    Serial.println("");
-#endif
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+    MJB_DEBUG_LOG_LINE("==============\n");
 #endif
 }
 
 void Scheduler::_processEventsForTime(Scheduler::Time const time)
 {
-    // Check for potential time overflow, start with those & reset the overflowed Tasks set.
-    if (this->_lastTime > time) {this->_tasks = this->_tasksOverflowed; this->_tasksOverflowed.clear();}
+    // check for potential time overflow, start with those & reset the overflowed tasks set.
+    if (_lastTime > time)
+    {
+        _tasks = _tasksOverflowed;
+        _tasksOverflowed.clear();
+    }
     
-    // We'll be copying the Event instances which are going to be executed this cycle to the variable below
-    // for safety. That's because we might be modifying the _tasks container leading to undefined behaviour.
-    Scheduler::Tasks executableTasks; // Stores Task instances which will be executed in this update cycle.
+    // We'll be copying Event instances which will be executed this cycle, to the variable below,
+    // for safety, since we might modify the _tasks container (leading to undefined behaviour).
+    Scheduler::Tasks executableTasks; // Stores Task instances to be executed this update cycle.
     
     // Get a copy of all Task instances (pointers) we'll be executing this update cycle for safety.
-    for (Scheduler::Task const &task : this->_tasks)
+    for (Scheduler::Task const &task : _tasks)
     {
         // All Event instances of equal execution time are stored in the same Task instance,
-        // these Task instances are then stored in std::map and are sorted (prioritized) incrementally.
-        // That means Task instances with lower priority come first, beacuse Event instances containing
-        // lower (earlier) execution times must be executed before those of higher (later) execution times.
-        // This means only Task instances with priority less than or equal to time must be executed now.
+        // these Task instances are stored in std::map and are sorted (prioritized) incrementally.
+        // That means Task instances with lower priority come first, beacuse Event instances
+        // containing lower (earlier) execution times must be executed before those of higher
+        // (later) execution times.
+        // Only Task instances with priority less than, or equal to, time, must be executed now.
         if (task.priority > time) break;
         
         executableTasks.insert(task);
@@ -278,68 +329,59 @@ void Scheduler::_processEventsForTime(Scheduler::Time const time)
     
     for (Scheduler::Task const &task : executableTasks)
     {
-        for (Scheduler::Event * const event : task.events)
+        for (std::shared_ptr<Scheduler::Event> const &event : task.events)
         {
-            if (this->delegate) this->delegate->schedulerStartingEvent(this, event);
-            
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-            std::cout << std::endl << "==========" << std::endl;
-            std::cout << "[Scheduler <" << std::hex << this << ">] Event <"
-            << std::hex << event << "> running." << std::endl;
-#else
-            Serial.println("");
-            Serial.println("==========");
-            Serial.print("[Scheduler <");
-            Serial.print((unsigned long) this, HEX);
-            Serial.print(">] Event <");
-            Serial.print((unsigned long) event, HEX);
-            Serial.println("> running.");
+            _delegate([this, &event](std::shared_ptr<SchedulerDelegate> const &delegate) -> bool {
+                delegate->schedulerStartingEvent(this, event);
+                return true;
+            });
+
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+            MJB_DEBUG_LOG_LINE("\n==========");
+            MJB_DEBUG_LOG("[Scheduler <");
+            MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+            MJB_DEBUG_LOG(">] Event <");
+            MJB_DEBUG_LOG_FORMAT((unsigned long) event.get(), MJB_DEBUG_LOG_HEX);
+            MJB_DEBUG_LOG_LINE("> running.");
 #endif
-#endif
+
             int const error = event->execute(time);
             
             if (error)
             {
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-                std::cout << "[Scheduler <" << std::hex << this << ">] Event <"
-                << std::hex << event << "> returned error code " << std::dec << error << std::endl;
-#else
-                Serial.print("[Scheduler <");
-                Serial.print((unsigned long) this, HEX);
-                Serial.print(">] Event <");
-                Serial.print((unsigned long) event, HEX);
-                Serial.print("> returned error code ");
-                Serial.println(error);
-#endif
+
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+                MJB_DEBUG_LOG("[Scheduler <");
+                MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+                MJB_DEBUG_LOG(">] Event <");
+                MJB_DEBUG_LOG_FORMAT((unsigned long) event.get(), MJB_DEBUG_LOG_HEX);
+                MJB_DEBUG_LOG("> returned error code ");
+                MJB_DEBUG_LOG_LINE(error);
 #endif
             }
-            
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-            std::cout << "[Scheduler <" << std::hex << this << ">] Event <"
-            << std::hex << event << "> halting." << std::endl;
-            std::cout << "==========" << std::endl << std::endl;
-#else
-            Serial.print("[Scheduler <");
-            Serial.print((unsigned long) this, HEX);
-            Serial.print(">] Event <");
-            Serial.print((unsigned long) event, HEX);
-            Serial.println("> halting.");
-            Serial.println("==========");
-            Serial.println("");
+
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+            MJB_DEBUG_LOG("[Scheduler <");
+            MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+            MJB_DEBUG_LOG(">] Event <");
+            MJB_DEBUG_LOG_FORMAT((unsigned long) event.get(), MJB_DEBUG_LOG_HEX);
+            MJB_DEBUG_LOG_LINE("> halting.");
+            MJB_DEBUG_LOG_LINE("==========\n");
 #endif
-#endif
-            
-            if (this->delegate) this->delegate->schedulerCompletedEvent(this, event);
-            
+
+            _delegate([this, &event, error](std::shared_ptr<SchedulerDelegate> const &delegate) -> bool {
+                delegate->schedulerCompletedEvent(this, event, error);
+                return true;
+            });
+
             // Check for special case, being Daemon instances.
-            if (Identifiable<Daemon>::Instanced(event))
+            if (Identifiable<Daemon>::Instanced(event.get()))
             {
                 // Since this is a Daemon, and Daemons repeat until finished,
                 // calcualte next execution time and request scheduler priority update.
-                Daemon * const daemon = static_cast<Daemon *>(event);
+                std::shared_ptr<Daemon> daemon = std::static_pointer_cast<Scheduler::Daemon>(event);
+
+                // Daemon * const daemon = static_cast<Daemon *>(event.get());
                 if (!daemon->finished())
                 {
                     // Calculate the Daemon instance's next execution time.
@@ -349,260 +391,117 @@ void Scheduler::_processEventsForTime(Scheduler::Time const time)
                     if (executeTime < time)
                     {
                         // Remove from main Task instance set and reinsert into overflowed set.
-                        if (Scheduler::_DequeueTasksEvent(this->_tasks, event))
+                        if (Scheduler::_DequeueTasksEvent(_tasks, event))
                         {
                             // Since we've dequeued the event, it's not going to attempt to reprioritize.
                             event->setExecuteTime(executeTime); // Preventing reprioritizing here.
-                            Scheduler::_EnqueueTasksEvent(this->_tasksOverflowed, event);
+                            Scheduler::_EnqueueTasksEvent(_tasksOverflowed, event);
                         }
                     }
                     // Update the execution time, but notice this reprioritizes the event.
                     else daemon->setExecuteTime(executeTime);
                 }
                 // These will only be dequeued with notification when they're really done.
-                else this->dequeue(static_cast<Event *>(daemon));
+                else dequeue(event);
             }
             // These will only be dequeued with notification when they're really done.
-            else this->dequeue(event);
+            else dequeue(event);
         }
     }
     
-    this->_lastTime = time;
+    _lastTime = time;
 }
 
-bool Scheduler::_EnqueueTasksEvent(Scheduler::Tasks &tasks, Scheduler::Event * const event)
+bool Scheduler::_EnqueueTasksEvent(Scheduler::Tasks &tasks,
+                                   Scheduler::Task::Event const &event)
 {
     // Passing priority to prevent the task instance inserting the element (temporary task obj.)
     // We're just concerend with getting the Task instance matching this one's priority.
-    // NOTE: Sets ONLY return const_iterator and implicitly const iterator (using mutable to work around it).
-    // The "mutable" keyword works in this case because it doesn't affect the priority or position in the map.
+    // NOTE: A set can only return either const_iterator, or const iterator implicitly, but we
+    // require events to be modifiable, so we work around it using the mutable keyword.
+    // The "mutable" keyword works here since it doesn't affect task's priority/position in the set.
     Scheduler::Tasks::const_iterator const task = tasks.find(Scheduler::Task(event->executeTime()));
     
-    if (task == tasks.end()) tasks.insert(Scheduler::Task(event));
-    else task->events.insert(event);
-    
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Scheduler] Event <" << std::hex
-    << event << "> enqueued." << std::endl;
-#else
-    Serial.print("[Scheduler] Event <");
-    Serial.print((unsigned long) event);
-    Serial.println("> enqueued.");
-#endif
+    if (task == tasks.end())
+    {   // If no tasks with corresponding priority was found, create one with the event.
+        tasks.insert(Scheduler::Task(event));
+    }
+    else
+    {   // If a tasks with corresponding priority was found, add the event to its events.
+        task->events.insert(event);
+    }
+
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+    MJB_DEBUG_LOG("[Scheduler] Event <");
+    MJB_DEBUG_LOG_FORMAT((unsigned long) event.get(), MJB_DEBUG_LOG_HEX);
+    MJB_DEBUG_LOG_LINE("> enqueued.");
 #endif
     
     return true;
 }
 
-bool Scheduler::_DequeueTasksEvent(Scheduler::Tasks &tasks, Scheduler::Event * const event)
+bool Scheduler::_DequeueTasksEvent(Scheduler::Tasks &tasks,
+                                   Scheduler::Task::Event const &event)
 {
+    bool dequeuedTaskEvent = false; // Assume we won't find the event within any task.
     Scheduler::Tasks::const_iterator const task = tasks.find(Scheduler::Task(event->executeTime()));
-    
-    // If the event's priority task is found, it may be found inside the task event's set.
-    // If category doesn't exist, event definitely isn't in the tasks set.
-    if (task != tasks.end() && task->events.count(event))
-    {
-        // Event based objects are unregistered by the Event destructor.
-        if (task->events.size() > 1) task->events.erase(event);
-        else tasks.erase(task);
-        
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-        std::cout << "[Scheduler] Event <" << std::hex
-        << event << "> dequeued." << std::endl;
-#else
-        Serial.print("[Scheduler] Event <");
-        Serial.print((unsigned long) event);
-        Serial.println("> dequeued.");
-#endif
-#endif
-        
-        return true;
-    }
-    
-    // If the code reached this stage, event wasn't found!
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << std::endl << "[Scheduler] ERROR: THE EVENT <" << std::hex
-    << event << "> WASN'T FOUND!" << std::endl;
-#else
-    Serial.print("[Scheduler] ERROR: THE EVENT <");
-    Serial.print((unsigned long) event);
-    Serial.println("> WASN'T FOUND!");
-#endif
-#endif
-    
-    return false;
-}
 
-bool Scheduler::_DequeueTasksEventWithPriority(Scheduler::Tasks &tasks,
-                                               Scheduler::Event * const event,
-                                               Scheduler::Time const priority)
-{
-    Scheduler::Tasks::const_iterator const task = tasks.find(Scheduler::Task(priority));
-    
-    // If the event's priority task is found, it may be found inside the task event's set.
-    // If category doesn't exist, event definitely isn't in the tasks set.
-    if (task != tasks.end() && task->events.count(event))
+    // If a task matching the event's priority exsists in the set of tasks,
+    // the event might be contained within that priority task.
+    // If a task matching the event's priority doesn't exist in the set of tasks,
+    // we can assume the event was never enqueued due to a lack of priority task.
+    if ((task != tasks.end()) && (task->events.count(event) > 0))
     {
-        // Event based objects are unregistered by the Event destructor.
-        if (task->events.size() > 1) task->events.erase(event);
-        else tasks.erase(task);
-        
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-        std::cout << "[Scheduler] Event <" << std::hex
-        << event << "> dequeued." << std::endl;
-#else
-        Serial.print("[Scheduler] Event <");
-        Serial.print((unsigned long) event);
-        Serial.println("> dequeued.");
-#endif
-#endif
-        
-        return true;
-    }
-    
-    // If the code reached this stage, event wasn't found!
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << std::endl << "[Scheduler] ERROR: THE EVENT <" << std::hex
-    << event << "> WASN'T FOUND!" << std::endl;
-#else
-    Serial.print("[Scheduler] ERROR: THE EVENT <");
-    Serial.print((unsigned long) event);
-    Serial.println("> WASN'T FOUND!");
-#endif
-#endif
-    
-    return false;
-}
-
-void Scheduler::_AssociateEventToScheduler(Scheduler::Event *  const event,
-                                           Scheduler * const scheduler)
-{
-    Scheduler::_AssociationRegister[event] = scheduler;
-    
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    if (scheduler)
-    {
-        std::cout << "[Scheduler] Event <" << std::hex << event << " associated to Scheduler <" << std::hex << scheduler << ">." << std::endl;
-    } else {
-        std::cout << "[Scheduler] Event <" << std::hex << event << "> disassociated." << std::endl;
-    }
-    
-    std::cout << "[Scheduler] " << Scheduler::_AssociationRegister.size() << " Event(s) registered." << std::endl;
-#else
-    if (scheduler)
-    {
-        Serial.print("[Scheduler] Event <");
-        Serial.print((unsigned long) event, HEX);
-        Serial.print("> associated to Scheduler <");
-        Serial.print((unsigned long) scheduler, HEX);
-        Serial.print(">.");
-    } else {
-        Serial.print("[Scheduler] Event <");
-        Serial.print((unsigned long) event, HEX);
-        Serial.println("> disassociated.");
-    }
-    
-    Serial.print("[Scheduler] ");
-    Serial.print(Scheduler::_AssociationRegister.size());
-    Serial.println(" Event(s) registered.");
-#endif
-#endif
-}
-
-void Scheduler::_DissasociateEvent(Scheduler::Event * const event)
-{
-    Scheduler::_AssociationRegister.erase(event);
-    
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Scheduler] Event <" << std::hex << event << "> unregistered." << std::endl;
-    std::cout << "[Scheduler] " << Scheduler::_AssociationRegister.size() << " Event(s) registered." << std::endl;
-#else
-    Serial.print("[Scheduler] Event <");
-    Serial.print((unsigned long) event, HEX);
-    Serial.println("> unregistered.");
-    
-    Serial.print("[Scheduler] ");
-    Serial.print(Scheduler::_AssociationRegister.size());
-    Serial.println(" Event(s) registered.");
-#endif
-#endif
-}
-
-bool Scheduler::_ReprioritizeEvent(Scheduler::Event * const event, Time const lastPriority)
-{
-    if (!event) return false;
-    
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Scheduler] Recalculating Event <" << std::hex << event << "> priority." << std::endl;
-#else
-    Serial.print("[Scheduler] Recalculating Event <");
-    Serial.print((unsigned long) event, HEX);
-    Serial.println("> priority.");
-#endif
-#endif
-    
-    Scheduler * const scheduler = Scheduler::_AssociationRegister[event];
-    
-    // No need to reprioritize if not in a scheduler.
-    if (scheduler) {
-        if (!Scheduler::_DequeueTasksEventWithPriority(scheduler->_tasks, event, lastPriority))
-        {
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-            std::cout << "[Scheduler] ERROR: UNABLE TO DEQUEUE Event <" << std::hex << event << ">!!!" << std::endl;
-#else
-            Serial.print("[Scheduler] ERROR: UNABLE TO DEQUEUE Event <");
-            Serial.print((unsigned long) event, HEX);
-            Serial.println(">!!!");
-#endif
-#endif
-            return false;
+        // If the task has no remaining events, erase it from the tasks' set,
+        // otherwise, remove the dequeued event from the task's events.
+        if (task->events.size() > 1)
+        { // If the task has more than just the event being erased, only erase the event.
+            task->events.erase(event);
         }
-        
-        if (!Scheduler::_EnqueueTasksEvent(scheduler->_tasks, event))
-        {
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-            std::cout << "[Scheduler] ERROR: UNABLE TO ENQUEUE Event <" << std::hex << event << ">!!!" << std::endl;
-#else
-            Serial.print("[Scheduler] ERROR: UNABLE TO ENQUEUE Event <");
-            Serial.print((unsigned long) event, HEX);
-            Serial.println(">!!!");
-#endif
-#endif
-            return false;
+        else
+        { // If the task has only the event, save processing time by erasing it instead.
+            tasks.erase(task);
         }
+
+        dequeuedTaskEvent = true;
+
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+        MJB_DEBUG_LOG("[Scheduler] Event <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) event.get(), MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE("> dequeued.");
+#endif
     }
-    
-#if defined DEBUG && defined SCHEDULER_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Scheduler] Recalculated Event <" << std::hex << event << "> priority." << std::endl;
-#else
-    Serial.print("[Scheduler] Recalculated Event <");
-    Serial.print((unsigned long) event, HEX);
-    Serial.println("> priority.");
+
+#if defined(MJB_DEBUG_LOGGING_SCHEDULER)
+    if (!dequeuedTaskEvent)
+    {
+        MJB_DEBUG_LOG("[Scheduler] WARNING: THE EVENT <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) event.get(), MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE("> WASN'T FOUND!");
+    }
 #endif
-#endif
-    return true;
+
+    return dequeuedTaskEvent;
 }
 
 Scheduler::Scheduler():
-delegate(nullptr),
 _lastTime(0)
 {
-    Scheduler::_InstanceRegister.insert(this);
+#if defined(MJB_MULTITHREAD_CAPABLE)
+    // Enable the _InstanceRegisterLock immediately upon entering the constructor.
+    // NOTICE: The lock is driven by the code block, released on block-exit.
+    std::lock_guard<std::mutex> const lock(Scheduler::_InstanceRegisterLock);
+#endif
+    Scheduler::_InstanceRegister().insert(this);
 }
 
 Scheduler::~Scheduler()
 {
-    Scheduler::_InstanceRegister.erase(this);
+#if defined(MJB_MULTITHREAD_CAPABLE)
+    // Enable the _InstanceRegisterLock immediately upon entering the destructor.
+    // NOTICE: The lock is driven by the code block, released on block-exit.
+    std::lock_guard<std::mutex> const lock(Scheduler::_InstanceRegisterLock);
+#endif
+    Scheduler::_InstanceRegister().erase(this);
 }
 

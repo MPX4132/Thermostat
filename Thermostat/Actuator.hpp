@@ -16,10 +16,9 @@
 #include "Development.hpp"
 #include "Pin.hpp"
 #include "Scheduler.hpp"
+#include "Accessible.hpp"
 
-#ifdef HARDWARE_INDEPENDENT
-#include <iostream>
-#else
+#if defined(MJB_ARDUINO_LIB_API)
 #include <Arduino.h>
 #endif
 
@@ -27,7 +26,7 @@
 // Actuator : This class abstracts the functionality of Actuators, only being
 // able to send output signals via the I/O rail.
 // =============================================================================
-class Actuator : public Scheduler::Delegate
+class Actuator : public Accessible, public SchedulerDelegate
 {
 public:
     
@@ -62,14 +61,14 @@ protected:
         
         int execute(Scheduler::Time const time);
         
-        Event(Pin * const pin,
+        Event(std::shared_ptr<Pin> const &pin,
               Pin::Configuration const &configuration,
               Scheduler::Time const time);
         
         ~Event();
         
     protected:
-        Pin * const _pin;
+        std::shared_ptr<Pin> const _pin;
         Pin::Configuration const _configuration;
     };
     
@@ -81,13 +80,9 @@ protected:
     
     Scheduler _scheduler;
     
-    
-    virtual void schedulerDequeuedEvent(Scheduler * const scheduler,
-                                        Scheduler::Event * const event);
-    
 };
 
-#ifdef HARDWARE_INDEPENDENT
+#if ! defined(MJB_ARDUINO_LIB_API)
 unsigned long micros();
 #endif
 

@@ -14,12 +14,6 @@
 #include "Actuator.hpp"
 #include "Pin.hpp"
 
-#ifdef HARDWARE_INDEPENDENT
-#include <iostream>
-#else
-#include <Arduino.h>
-#endif
-
 // =============================================================================
 // Sensor : This class abstracts the functionality of Sensor I/O modules.
 // The Sensor class is capable of reading data from a module in the I/O rail.

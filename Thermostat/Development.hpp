@@ -9,29 +9,57 @@
 #ifndef Development_hpp
 #define Development_hpp
 
-#ifndef XCODE_IDE
-#warning Uncomment the macro below to simulate/debug on a PC (XCode should automatically do it)
+#define MJB_DEBUG_LOGGING
 
-// #define HARDWARE_INDEPENDENT
-
-#warning The code must be modified to compile on Visual Studio due to changes in the Microsoft-provided libraries.
+#if defined(__AVR__)
+    #define MJB_DEBUG_LOG_HW_DEPENDENT
+    #define MJB_ARDUINO_LIB_API
+    #define MJB_HW_IO_PINS_AVAILABLE
+#elif defined(__linux__) || defined(__unix__) || defined(__MACH__) || defined(_WIN32)
+    #define MJB_MULTITHREAD_CAPABLE
 #endif
 
-#ifdef XCODE_IDE
-#define HARDWARE_INDEPENDENT
+#if defined(MJB_DEBUG_LOGGING)
+    #if defined(MJB_DEBUG_LOG_HW_DEPENDENT)
+        #include <Print> // TODO: Find the correct header.
+        #define MJB_DEBUG_LOG_HEX HEX
+        #define MJB_DEBUG_LOG_BIN BIN
+        #define MJB_DEBUG_LOG_OCT OCT
+        #define MJB_DEBUG_LOG_DEC DEC
+        #define MJB_DEBUG_LOG(msg) Serial.print(msg)
+        #define MJB_DEBUG_LOG_FORMAT(msg, format) Serial.print(msg, format)
+        #define MJB_DEBUG_LOG_LINE(msg) Serial.println(msg)
+        #define MJB_DEBUG_LOG_LINE_FORMAT(msg, format) Serial.println(msg, format)
+    #else
+        #include <iostream>
+        #define MJB_DEBUG_LOG_HEX std::hex
+        #define MJB_DEBUG_LOG_BIN std::hex // No std::bin exists
+        #define MJB_DEBUG_LOG_OCT std::oct
+        #define MJB_DEBUG_LOG_DEC std::dec
+        #define MJB_DEBUG_LOG(msg) std::cout << msg
+        #define MJB_DEBUG_LOG_FORMAT(msg, format) MJB_DEBUG_LOG(format << msg)
+        #define MJB_DEBUG_LOG_LINE(msg) MJB_DEBUG_LOG(msg) << std::endl
+        #define MJB_DEBUG_LOG_LINE_FORMAT(msg, format) MJB_DEBUG_LOG(format << msg) << std::endl
+    #endif
+#else
+    #define MJB_DEBUG_LOG_HEX 0
+    #define MJB_DEBUG_LOG(msg)
+    #define MJB_DEBUG_LOG_FORMAT(msg, format)
+    #define MJB_DEBUG_LOG_LINE(msg)
+    #define MJB_DEBUG_LOG_LINE_FORMAT(msg, format)
 #endif
 
-// Comment/Undefine the following macro (3 lines) to strip debug messages.
-#ifndef DEBUG
-#define DEBUG
-#endif
+#if defined(MJB_DEBUG_LOGGING)
 
 // Uncomment/Comment the following macros to add/remove debug messages.
-//#define CYCLE_LOGS
-//#define RTTI_LOGS
-//#define SCHEDULER_LOGS
-//#define PIN_LOGS
-//#define DHT22_LOGS
-#define THERMOSTAT_LOGS
+//#define MJB_DEBUG_LOGGING_CYCLE
+//#define MJB_DEBUG_LOGGING_IDENTIFIABLE
+//#define MJB_DEBUG_LOGGING_DELEGABLE
+//#define MJB_DEBUG_LOGGING_SCHEDULER
+//#define MJB_DEBUG_LOGGING_PIN
+#define MJB_DEBUG_LOGGING_DHT22
+#define MJB_DEBUG_LOGGING_THERMOSTAT
 
-#endif /* Development_h */
+#endif
+
+#endif /* Development_hpp */

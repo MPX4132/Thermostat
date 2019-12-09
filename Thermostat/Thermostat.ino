@@ -1,71 +1,91 @@
-// This HVAC control system is designed to run on low resource systems.
+//
+//  Thermostat.ino
+//  Thermostat
+//
+//  Created by Matias Barcenas on 1/11/17.
+//  Copyright © 2017 Matias Barcenas. All rights reserved.
+//
 
+// Description: This HVAC control system is designed to run on low resource systems.
 
 #include "Development.hpp"
 
-#ifndef HARDWARE_INDEPENDENT
+#if defined(MJB_ARDUINO_LIB_API)
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
+#endif
+
+#include <memory>
+
 #include "Thermostat.hpp"
 #include "Scheduler.hpp"
 #include "Sensor.hpp"
 #include "DHT22.hpp"
+#include "Pin.hpp"
+
 
 #warning Remember to remove your access point data before commiting!
+#if defined(MJB_ARDUINO_LIB_API)
 char const * const WIFI_SSID = "SSIDHERE";
 char const * const WIFI_PASS = "PASSHERE";
+#endif
 
-// NOTE: If objects are declared here from other files, and they've got
-// static members such as a static std::map member (like Pin), initialization
-// will not occur properly and will likely crash the ESP8266 module.
-// The reason for that is because an object declared here is considered
-// static, meaning it will be initialized with the static code in this
-// translational unit (file), and this could run before the other
-// translational unit's static code is initialized, such as the map member.
-// This is fixed by having the instance in a function or having it be
-// dynamically initialized, both which occur after static code has been initialized.
+Pin::Identifier const temperatureSensorDataPin = 2;
+Pin::Identifier const thermostatBlowerPin = 14;
+Pin::Identifier const thermostatCoolingPin = 12;
+Pin::Identifier const thermostatHeatingPin = 13;
 
-DHT22 * thermometer; // Will point to the thermometer (DHT22) instance.
-Thermostat * thermostat; // Will point to the thermostat instance.
+Thermostat thermostat(Pin::Arrangement({
+    thermostatBlowerPin,
+    thermostatCoolingPin,
+    thermostatHeatingPin
+}), Thermostat::Thermometers({
+    // DHT22 should stabilize while waiting for WIFI to connect.
+    std::make_shared<DHT22>(temperatureSensorDataPin)
+}));
 
+#if defined(MJB_ARDUINO_LIB_API)
 // Prepare the web server object with typical port 80 for HTTP requests.
 ESP8266WebServer server(80);
 
 String GetContentType(String const filename);
 String GetStatusData();
+#endif
 
 void setup()
 {
+#if defined(MJB_ARDUINO_LIB_API)
     Serial.begin(115200);
-    Serial.println("Thermostat starting up...");
+    MJB_DEBUG_LOG_LINE("Thermostat starting up...");
+#endif
 
-    // We'll start all thermostat related objects first to have them ready.
-    thermometer = new DHT22(2); // Should stabilize while waiting for WIFI to connect.
-    thermostat = new Thermostat({14,12,13}, {thermometer});
+    thermostat.setTargetTemperature(Thermometer::TemperatureUnit(72, Thermometer::TemperatureUnit::Scale::Fahrenheit));
+    thermostat.setMode(Thermostat::Mode::Auto);
 
+#if defined(MJB_ARDUINO_LIB_API)
     // Begin WiFi configuration and do not continue until we've connected successfully.
-    Serial.println("[WIFI] Setting radio configuration, please wait...");
+    MJB_DEBUG_LOG_LINE("[WIFI] Setting radio configuration, please wait...");
     WiFi.mode(WIFI_STA); // Configure as a WIFI station, rather than an access point. 
     WiFi.begin(WIFI_SSID, WIFI_PASS); // Configure and activate WIFI for connection.
 
     // Check WIFI connection state, and wait if it's not yet ready.
-    Serial.println("[WIFI] Checking connection state...");
+    MJB_DEBUG_LOG_LINE("[WIFI] Checking connection state...");
     while (WiFi.status() != WL_CONNECTED) {
-        Serial.print("[WIFI] Waiting for connection to \"");
-        Serial.print(WIFI_SSID);
-        Serial.print("\" @ ");
-        Serial.print(millis());
+        MJB_DEBUG_LOG("[WIFI] Waiting for connection to \"");
+        MJB_DEBUG_LOG(WIFI_SSID);
+        MJB_DEBUG_LOG("\" @ ");
+        MJB_DEBUG_LOG(millis());
         // Give it a bit more time to attempt connecting.
-        for (byte i = 0; i < 3; i++) {delay(1000); Serial.print(".");}
-        Serial.println("");
+        for (byte i = 0; i < 3; i++) {delay(1000); MJB_DEBUG_LOG(".");}
+        MJB_DEBUG_LOG_LINE("");
     }
     
-    Serial.print("[WIFI] Connected to \"");
-    Serial.print(WIFI_SSID);
-    Serial.print("\" with address ");
-    Serial.println(WiFi.localIP());
+    MJB_DEBUG_LOG("[WIFI] Connected to \"");
+    MJB_DEBUG_LOG(WIFI_SSID);
+    MJB_DEBUG_LOG("\" with address ");
+    MJB_DEBUG_LOG_LINE(WiFi.localIP());
     
     
     // Begin web server for serving thermostat related data & operations.
@@ -154,6 +174,7 @@ void setup()
     server.begin();
     
     MDNS.begin("thermostasis");
+#endif
 }
 
 void loop()
@@ -161,21 +182,24 @@ void loop()
     // Scheduler at microsecond resolution.
     Scheduler::Time const now = micros();
     Scheduler::UpdateInstances(now);
-    
+
+#if defined(MJB_ARDUINO_LIB_API)
     if (WiFi.status() != WL_CONNECTED)
     {
-        Serial.print("[WIFI] Radio is down, time is ");
-        Serial.println(now); return; // Can't handle clients.
+        MJB_DEBUG_LOG("[WIFI] Radio is down, time is ");
+        MJB_DEBUG_LOG_LINE(now); return; // Can't handle clients.
     }
     
     server.handleClient();
+#endif
     
-#ifdef CYCLE_LOGS
-    Serial.print("[Cycle] Completed at: ");
-    Serial.println(now);
+#ifdef MJB_DEBUG_LOGGING_CYCLE
+    MJB_DEBUG_LOG("[Cycle] Completed at: ");
+    MJB_DEBUG_LOG_LINE(now);
 #endif
 }
 
+#if defined(MJB_ARDUINO_LIB_API)
 String GetContentType(String const filename)
 {
     if(server.hasArg("download")) return "application/octet-stream";
@@ -207,6 +231,4 @@ String GetStatusData()
     statusData += "}";
     return statusData;
 }
-
 #endif
-

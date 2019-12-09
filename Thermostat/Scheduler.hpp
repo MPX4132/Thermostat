@@ -11,20 +11,26 @@
 
 #include <set>
 #include <map>
+#include <memory>
+#include <mutex>
 #include "Development.hpp"
 #include "Identifiable.hpp"
+#include "Accessible.hpp"
+#include "Delegable.hpp"
 
-#ifdef HARDWARE_INDEPENDENT
-#include <iostream>
-#else
+#if defined(MJB_ARDUINO_LIB_API)
 #include <Arduino.h>
+#else
+#include <iostream>
 #endif
+
+class SchedulerDelegate;
 
 // =============================================================================
 // Scheduler : This class is responsible for scheduling and executing jobs at
 // specific times, given some type of clock.
 // =============================================================================
-class Scheduler
+class Scheduler : public Accessible, public Delegable<SchedulerDelegate>
 {
 public:
     typedef unsigned long Time;
@@ -32,43 +38,45 @@ public:
     // =========================================================================
     // Event: A schedualable class used to trigger one-time events.
     // =========================================================================
-    class Event
+    class Event : public Accessible
     {
     public:
-        
-        // The following method is meant to be implemented, meaning this class
-        // must be subclassed and custom code to execute at certain time placed
-        // in the execute method. Once enqueued in a scheduler the current time
-        // at the time of exectuion will be passed to the event.
+
+        // The method below must be implemented by the deriving class, defining
+        // the code to be triggered at the event's run-time given by the method
+        // Event::executeTime(), which is set using Event::setExeuteTime(...).
         virtual int execute(Time const time) = 0;
         
         Time executeTime() const;
-        
-        // NOTE: The following method(s) have serious implications, read below:
-        // This means the subclass may change its time, requiring the scheduler
-        // to implement a means to update its internal event calling sequence.
-        void setExecuteTime(Time const executeTime);
-        
-        Event(Time const executeTime = 0); // By default, immediate event.
+        bool setExecuteTime(Time const executeTime);
+
+        bool scheduled() const;
+        std::weak_ptr<Scheduler> const &scheduler() const;
+        bool setScheduler(std::weak_ptr<Scheduler> const &scheduler);
+
+        bool schedule(std::weak_ptr<Scheduler> const &scheduler);
+        bool unschedule();
+
+        Event(Time const executeTime = 0); // Trigger event instantly by default.
         virtual ~Event();
         
     protected:
-        
+
+        virtual void _executeTimeDidChange(Time const executeTimeDelta);
+
+    private:
+
         Time _executeTime;
-        
-        // NOTE: The following method(s) have serious implications, read below:
-        // This means that subclasses may wish to overwrite the virtual method,
-        // making it possible the execution time changes without having notified
-        // the scheduler with the event enqueued. At that point the scheduler
-        // could potentially skip events down the queue with higher priority!
-        virtual void _executeTimeReprioritize(Time const lastPriority);
+
+        std::weak_ptr<Scheduler> _scheduler;
     };
-    
+
+
     // Unfortunately I can't use the class below the way it was designed due to
     // the fact polymorphic objects can't be downcasted due to a lack of rtti.
     // Runtime Type Information does not fit on the memory of ESP8266-03, which
     // is the module(s) I've been using to test the code with.
-    // Working around it by using a super-bootlegged template I designed, fugly.
+    // Working around it by using a super-bootlegged template I designed; fugly.
     // =========================================================================
     // Daemon: A schedulable class used to trigger repeating events.
     // =========================================================================
@@ -76,8 +84,8 @@ public:
     {
     public:
         
-        virtual Time executeTimeInterval() const;
-        virtual void setExecuteTimeInterval(Time const executeTimeInterval);
+        Time executeTimeInterval() const;
+        void setExecuteTimeInterval(Time const executeTimeInterval);
         
         virtual bool finished() const;
         
@@ -87,51 +95,34 @@ public:
     protected:
         
         Time _executeTimeInterval;
-        
+
+        void _executeTimeIntervalDidChange(Time const executeTimeIntervalDelta);
+
     };
     
-    
-    // =========================================================================
-    // Delegate: A common interface used to interface with other classes.
-    // =========================================================================
-    class Delegate
-    {
-    public:
-        
-        virtual void schedulerStartingEvent(Scheduler * const scheduler,
-                                            Event * const event);
-        virtual void schedulerCompletedEvent(Scheduler * const scheduler,
-                                             Event * const event);
-        
-        virtual void schedulerEnqueuedEvent(Scheduler * const scheduler,
-                                            Event * const event);
-        virtual void schedulerDequeuedEvent(Scheduler * const scheduler,
-                                            Event * const event);
-        
-        virtual ~Delegate();
-    };
-    
-    Delegate * delegate;
-    
-    bool enqueue(Event * const event);
-    bool dequeue(Event * const event);
+    bool enqueue(std::shared_ptr<Event> const &event);
+    bool dequeue(std::shared_ptr<Event> const &event);
+
+    bool scheduled(std::shared_ptr<Event> const &event) const;
     
     static void UpdateInstances(Time const time);
     
     Scheduler();
-    ~Scheduler();
+    virtual ~Scheduler();
     
 protected:
     
-    typedef std::set<Scheduler *> Schedules;
-    typedef std::set<Event *> Events;
-    
+    //typedef std::atomic<std::set<const std::shared_ptr<Scheduler>>> Schedules;
+//    typedef std::set<Scheduler * const> Schedules;
+
     // =========================================================================
     // Task: A wrapper for events to avoid potentially deleted memory, also
     // used to keep equal-priority elements together in a set.
     // =========================================================================
     struct Task
     {
+        typedef std::shared_ptr<Event> Event;
+
         bool operator<(Task const &other) const;
         bool operator>(Task const &other) const;
         bool operator==(Task const &other) const;
@@ -143,13 +134,13 @@ protected:
         // mutable because I've got a set of Task, and sets only return
         // const_iterator (or implicitly const iterator), and the events member
         // needs to be mutable (note, it doesn't affect Task's key/order in set).
-        mutable Events events;
+        mutable std::set<Event> events;
         
         // For the assignment operator, the value below must be modifiable.
         Time priority; // Non-const becuase it's casted as const anyway by set.
         
         Task(Task const &task);
-        Task(Event * const event);
+        Task(Event const &event);
         Task(Time const priority);
     };
 
@@ -158,7 +149,6 @@ protected:
     // executed following their priority, so iterating over the map is impossible.
     // [Explanation: Because iterating over the map may result in mixed results.]
     typedef std::set<Task> Tasks;
-    typedef std::map<Event *, Scheduler *> Associations;
     
     Tasks _tasks;
     Tasks _tasksOverflowed; // Holds Tasks to insert when time wraps around.
@@ -167,26 +157,37 @@ protected:
     
     void _processEventsForTime(Time const priority);
     
-    static bool _EnqueueTasksEvent(Tasks &tasks, Event * const event);
-    static bool _DequeueTasksEvent(Tasks &tasks, Event * const event);
-    
-    static bool _DequeueTasksEventWithPriority(Tasks &tasks, Event * const event, Time const priority);
-    
+    static bool _EnqueueTasksEvent(Tasks &tasks, Task::Event const &event);
+    static bool _DequeueTasksEvent(Tasks &tasks, Task::Event const &event);
     
     // The following static member holds all instances created of Scheduler,
     // which the class uses to update by calling the static UpdateInstances
     // method once an update cycle is being executed.
-    static Schedules _InstanceRegister;
-    
-    // The following static member associates instances of Event to instances of
-    // Scheduler in constant time to update event priority in constant time.
-    static Associations _AssociationRegister;
-    
-    static void _AssociateEventToScheduler(Event * const event, Scheduler * const scheduler = nullptr);
-    static void _DissasociateEvent(Event * const event);
-    
-    static bool _ReprioritizeEvent(Event * const event, Time const lastPriority);
-    
+    inline static std::set<Scheduler * const> &_InstanceRegister();
+#if defined(MJB_MULTITHREAD_CAPABLE)
+    static std::mutex _InstanceRegisterLock;
+#endif
+};
+
+// =========================================================================
+// Delegate: A common interface used to interface with other classes.
+// =========================================================================
+class SchedulerDelegate
+{
+public:
+
+    virtual void schedulerStartingEvent(Scheduler * const scheduler,
+                                        std::shared_ptr<Scheduler::Event> const &event);
+    virtual void schedulerCompletedEvent(Scheduler * const scheduler,
+                                         std::shared_ptr<Scheduler::Event> const &event,
+                                         int result);
+
+    virtual void schedulerEnqueuedEvent(Scheduler * const scheduler,
+                                        std::shared_ptr<Scheduler::Event> const &event);
+    virtual void schedulerDequeuedEvent(Scheduler * const scheduler,
+                                        std::shared_ptr<Scheduler::Event> const &event);
+
+    virtual ~SchedulerDelegate();
 };
 
 #endif /* Scheduler_hpp */

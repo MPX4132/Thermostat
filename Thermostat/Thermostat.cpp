@@ -13,7 +13,7 @@
 // =============================================================================
 Thermostat::Mode Thermostat::mode() const
 {
-    return this->_mode;
+    return _mode;
 }
 
 void Thermostat::setMode(const Thermostat::Mode mode)
@@ -23,19 +23,20 @@ void Thermostat::setMode(const Thermostat::Mode mode)
 
 Thermostat::Status Thermostat::status() const
 {
-    return this->_status;
+    return _status;
 }
 
 float Thermostat::humidity()
 {
     float humidity = 0;
     
-    for (Thermometer * const thermometer : this->thermometers)
+    for (std::shared_ptr<Thermometer> const &thermometer : thermometers)
     {
         humidity += thermometer->humidity();
     }
-    
-    if (this->thermometers.size() > 1) humidity /= this->thermometers.size();
+
+    // NOTE: The following accounts for no thermometers; division by 0.
+    if (thermometers.size() > 1) humidity /= thermometers.size();
     
     return humidity;
 }
@@ -44,12 +45,13 @@ Thermometer::TemperatureUnit Thermostat::humiture()
 {
     Thermometer::TemperatureUnit humiture = 0;
     
-    for (Thermometer * const thermometer : this->thermometers)
+    for (std::shared_ptr<Thermometer> const &thermometer : thermometers)
     {
         humiture += thermometer->humiture();
     }
-    
-    if (this->thermometers.size() > 1) humiture /= this->thermometers.size();
+
+    // NOTE: The following accounts for no thermometers; division by 0.
+    if (thermometers.size() > 1) humiture /= thermometers.size();
     
     return humiture;
 }
@@ -59,51 +61,52 @@ Thermometer::TemperatureUnit Thermostat::temperature()
 {
     Thermometer::TemperatureUnit temperature = 0;
     
-    for (Thermometer * const thermometer : this->thermometers)
+    for (std::shared_ptr<Thermometer> const &thermometer : thermometers)
     {
         temperature += thermometer->temperature();
     }
-    
-    if (this->thermometers.size() > 1) temperature /= this->thermometers.size();
+
+    // NOTE: The following accounts for no thermometers; division by 0.
+    if (thermometers.size() > 1) temperature /= thermometers.size();
     
     return temperature;
 }
 
 Thermometer::TemperatureUnit Thermostat::targetTemperature() const
 {
-    return this->_targetTemperature;
+    return _targetTemperature;
 }
 
-void Thermostat::setTargetTemperature(Thermometer::TemperatureUnit const targetTemperature,
+void Thermostat::setTargetTemperature(Thermometer::TemperatureUnit const &targetTemperature,
                                       float const targetTemperatureThreshold)
 {
-    this->_targetTemperatureThreshold = targetTemperatureThreshold;
-    this->_targetTemperature = targetTemperature;
+    _targetTemperatureThreshold = targetTemperatureThreshold;
+    _targetTemperature = targetTemperature;
 }
 
 Thermostat::PerceptionIndex Thermostat::perceptionIndex() const
 {
-    return this->_perceptionIndex;
+    return _perceptionIndex;
 }
 
 void Thermostat::setPerceptionIndex(Thermostat::PerceptionIndex const perceptionIndex)
 {
-    this->_perceptionIndex = perceptionIndex;
+    _perceptionIndex = perceptionIndex;
 }
 
 int Thermostat::update(Scheduler::Time const time)
 {
     // NOTE: This method will NOT change the previously scheduled update time,
     // meaning an update might occur back-to-back or fairly close to each other.
-    return this->execute(time);
+    return execute(time);
 }
 
 Thermostat::Status Thermostat::_standby(Thermostat::Status const status)
 {
-    this->actuate({ // Toggle all pins to 0, or release all relays, immediately.
-        {this->_pinout[0], {Pin::Mode::Output, 0}, 0},
-        {this->_pinout[1], {Pin::Mode::Output, 0}, 0},
-        {this->_pinout[2], {Pin::Mode::Output, 0}, 0}
+    actuate({ // Toggle all pins to 0, or release all relays, immediately.
+        {_pinout[Thermostat::SignalLine::FanCall],  {Pin::Mode::Output, 0}, 0},
+        {_pinout[Thermostat::SignalLine::CoolCall], {Pin::Mode::Output, 0}, 0},
+        {_pinout[Thermostat::SignalLine::HeatCall], {Pin::Mode::Output, 0}, 0}
     });
     
     return status;
@@ -111,20 +114,20 @@ Thermostat::Status Thermostat::_standby(Thermostat::Status const status)
 
 Thermostat::Status Thermostat::_setCooler(bool const cool)
 {
-    this->actuate({ // Cool & Fan on if above target temp, off otherwise.
-        {this->_pinout[0], {Pin::Mode::Output, cool}, 0},
-        {this->_pinout[1], {Pin::Mode::Output, cool}, 0},
-        {this->_pinout[2], {Pin::Mode::Output, 0}, 0}
+    actuate({ // Cool & Fan on if above target temp, off otherwise.
+        {_pinout[Thermostat::SignalLine::FanCall],  {Pin::Mode::Output, cool}, 0},
+        {_pinout[Thermostat::SignalLine::CoolCall], {Pin::Mode::Output, cool}, 0},
+        {_pinout[Thermostat::SignalLine::HeatCall], {Pin::Mode::Output,    0}, 0}
     });
     return cool? Thermostat::Status::Cooling : Thermostat::Status::Standby;
 }
 
 Thermostat::Status Thermostat::_setHeater(bool const heat)
 {
-    this->actuate({ // Heat & Fan on if below target temp, off otherwise.
-        {this->_pinout[0], {Pin::Mode::Output, heat}, 0},
-        {this->_pinout[1], {Pin::Mode::Output, 0}, 0},
-        {this->_pinout[2], {Pin::Mode::Output, heat}, 0}
+    actuate({ // Heat & Fan on if below target temp, off otherwise.
+        {_pinout[Thermostat::SignalLine::FanCall],  {Pin::Mode::Output, heat}, 0},
+        {_pinout[Thermostat::SignalLine::CoolCall], {Pin::Mode::Output,    0}, 0},
+        {_pinout[Thermostat::SignalLine::HeatCall], {Pin::Mode::Output, heat}, 0}
     });
     return heat? Thermostat::Status::Heating : Thermostat::Status::Standby;
 }
@@ -132,87 +135,82 @@ Thermostat::Status Thermostat::_setHeater(bool const heat)
 int Thermostat::execute(Scheduler::Time const updateTime)
 {
     // Verify minimum pin count to properly operate an HVAC with relays (min 3).
-    // Why 3? Well: Fan call pin, Cool call pin & Heat call pin.
-    if (this->_pins.size() < 3) return 1; // Not enough control pins (error code 1)
+    // Why 3? Well: Fan call pin, Cool call pin, & Heat call pin.
+    if (_pins.size() < 3) {
+#if defined(MJB_DEBUG_LOGGING_THERMOSTAT)
+        MJB_DEBUG_LOG("[Thermostat <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE(">] ERROR: Signal lines missing!");
+#endif
+        return Thermostat::ExecutionCode::SignalLinesMissing; // Not enough control pins!
+    }
     
     // Check Actuator instance Pins are ready for operations.
-    if (!this->ready()) return 2; // Pins not ready or unavailable (error code 2)
+    if (!ready()) {
+#if defined(MJB_DEBUG_LOGGING_THERMOSTAT)
+        MJB_DEBUG_LOG("[Thermostat <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG_LINE(">] WARNING: Signal lines not ready!");
+#endif
+        return Thermostat::ExecutionCode::SignalLinesNotReady; // Pins not ready or unavailable!
+    }
 
     // Read this only once every update, since the sensor may need to timeout for a bit.
     // In my case, the DHT22 needs to timeout for about two seconds after a read cycle.
-    Thermometer::TemperatureUnit const currentTemperature = this->perceptionIndex()?
-        this->humiture() : this->temperature();
+    Thermometer::TemperatureUnit const currentTemperature = perceptionIndex()? humiture() : temperature();
     
-#if defined DEBUG && defined THERMOSTAT_LOGS
-#ifdef HARDWARE_INDEPENDENT
-    std::cout << "[Thermostat <" << std::hex << this
-        << ">] Temperature:"
-        << std::dec << this->temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit)
-        << "F, Humiture:"
-        << this->humiture().value(Thermometer::TemperatureUnit::Scale::Fahrenheit)
-        << "F, Humidity:"
-        << this->humidity() << "%" << std::endl;
-    std::cout << "[Thermostat <" << std::hex << this
-        << ">] Target:"
-        << std::dec << this->targetTemperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit)
-        << "F, Perceivable Index:"
-        << this->perceptionIndex()
-        << ", Mode:" << this->mode()
-        << ", Status:" << this->status()
-        << " at " << updateTime << std::endl;
-#else
-    Serial.print("[Thermostat <");
-    Serial.print((unsigned long) this, HEX);
-    Serial.print(">] Temperature:");
-    Serial.print(this->temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit));
-    Serial.print("F, Humiture:");
-    Serial.print(this->humiture().value(Thermometer::TemperatureUnit::Scale::Fahrenheit));
-    Serial.print("F, Humidity:");
-    Serial.print(this->humidity());
-    Serial.println("%");
+#if defined(MJB_DEBUG_LOGGING_THERMOSTAT)
+    MJB_DEBUG_LOG("[Thermostat <");
+    MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+    MJB_DEBUG_LOG(">] Temperature:");
+    MJB_DEBUG_LOG_FORMAT(temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit), MJB_DEBUG_LOG_DEC);
+    MJB_DEBUG_LOG("F, Humiture:");
+    MJB_DEBUG_LOG(humiture().value(Thermometer::TemperatureUnit::Scale::Fahrenheit));
+    MJB_DEBUG_LOG("F, Humidity:");
+    MJB_DEBUG_LOG(humidity());
+    MJB_DEBUG_LOG_LINE("%");
     
-    Serial.print("[Thermostat <");
-    Serial.print((unsigned long) this, HEX);
-    Serial.print(">] Target:");
-    Serial.print(this->targetTemperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit));
-    Serial.print("F, Measurement:");
-    Serial.print(this->measurementType());
-    Serial.print(", Mode:");
-    Serial.print(this->mode());
-    Serial.print(", Status:");
-    Serial.print(this->status());
-    Serial.print(" at ");
-    Serial.println(updateTime);
-#endif
+    MJB_DEBUG_LOG("[Thermostat <");
+    MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+    MJB_DEBUG_LOG(">] Target:");
+    MJB_DEBUG_LOG_FORMAT(targetTemperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit), MJB_DEBUG_LOG_DEC);
+    MJB_DEBUG_LOG("F, Perceivable Index:");
+    MJB_DEBUG_LOG(perceptionIndex());
+    MJB_DEBUG_LOG(", Mode:");
+    MJB_DEBUG_LOG(mode());
+    MJB_DEBUG_LOG(", Status:");
+    MJB_DEBUG_LOG(status());
+    MJB_DEBUG_LOG(" at ");
+    MJB_DEBUG_LOG_LINE(updateTime);
 #endif
     
-    switch (this->mode())
+    switch (mode())
     {
-        case Off: this->_status = this->_standby();
+        case Off: _status = _standby();
             break;
             
-        case Heat: this->_status = this->_setHeater(currentTemperature < this->targetTemperature());
+        case Heat: _status = _setHeater(currentTemperature < targetTemperature());
             break;
             
-        case Cool: this->_status = this->_setCooler(currentTemperature > this->targetTemperature());
+        case Cool: _status = _setCooler(currentTemperature > targetTemperature());
             break;
             
         case Auto: {
-            if (currentTemperature > (this->targetTemperature() + this->_targetTemperatureThreshold)) {
-                this->_status = this->_setCooler(true);
+            if (currentTemperature > (targetTemperature() + _targetTemperatureThreshold)) {
+                _status = _setCooler(true);
             } else
-            if (currentTemperature < (this->targetTemperature() - this->_targetTemperatureThreshold)) {
-                this->_status = this->_setHeater(true);
+            if (currentTemperature < (targetTemperature() - _targetTemperatureThreshold)) {
+                _status = _setHeater(true);
             } else {
-                this->_status = this->_standby(Thermostat::Status::Stasis);
+                _status = _standby(Thermostat::Status::Stasis);
             }
         }   break;
             
-        default: this->_status = this->_standby();
+        default: _status = _standby();
             break;
     }
     
-    return 0;
+    return Thermostat::ExecutionCode::Success;
 }
 
 
@@ -230,7 +228,7 @@ _status(Thermostat::Status::Standby),
 _mode(Thermostat::Mode::Off)
 {
     // targetTemp, targetTempThresh & _scheduler are fine auto-initialized.
-    this->_scheduler.enqueue(this);
+    _scheduler.enqueue(std::static_pointer_cast<Scheduler::Event>(Scheduler::Event::self()));
 }
 
 Thermostat::~Thermostat()

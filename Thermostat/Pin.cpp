@@ -11,8 +11,13 @@
 // =============================================================================
 // Pin : Static Variables Declaration
 // =============================================================================
-//Pin::Association Pin::_Reserved;
-Pin::Set Pin::_Reserved;
+Pin::Set &Pin::_Reserved()
+{
+    // TODO: Move out as static class member when the static-initialization
+    // order fiasco is fucking finally resovled.
+    static Pin::Set _reserved;
+    return _reserved;
+}
 
 
 // =============================================================================
@@ -45,24 +50,23 @@ Pin::Value Pin::state() const
     {
         case Pin::Mode::Auto:
         case Pin::Mode::Input: {
-#ifndef HARDWARE_INDEPENDENT
+#if defined(MJB_ARDUINO_LIB_API)
+            // TODO: Potential issue; chaning pin mode in const method.
             pinMode(this->identity(), INPUT);
 #endif
-            
-#if defined DEBUG && defined PIN_LOGS
-#ifdef HARDWARE_INDEPENDENT
-            std::cout << "[HW] Set Pin  Mode: INPUT" << std::endl;
-            std::cout << "[HW] Get Pin Value: 0 (hardcoded zero)" << std::endl;
-#else
-            Serial.println("[HW] Set Pin  Mode: INPUT");
+
+#if defined(MJB_DEBUG_LOGGING_PIN)
+#if defined(MJB_HW_IO_PINS_AVAILABLE)
             Pin::Value const value = digitalRead(this->identity());
-            Serial.print("[HW] Set Pin Value: ");
-            Serial.println(value);
-            return value;
+#else
+            Pin::Value const value = 0;
 #endif
+            MJB_DEBUG_LOG_LINE("[HW] Set Pin  Mode: INPUT");
+            MJB_DEBUG_LOG("[HW] Set Pin Value: ");
+            MJB_DEBUG_LOG_LINE(value);
 #endif
-            
-#ifndef HARDWARE_INDEPENDENT
+
+#if defined(MJB_HW_IO_PINS_AVAILABLE)
             return digitalRead(this->identity());
 #else
             return 0;
@@ -80,18 +84,13 @@ bool Pin::setState(Pin::Value const state)
         case Pin::Mode::Auto:
         case Pin::Mode::Output: {
             this->_value = state;
-#if defined DEBUG && defined PIN_LOGS
-#ifdef HARDWARE_INDEPENDENT
-            std::cout << "[HW] Set Pin  Mode: OUTPUT" << std::endl;
-            std::cout << "[HW] Set Pin Value: " << state << std::endl;
-#else
-            Serial.println("[HW] Set Pin  Mode: OUTPUT");
-            Serial.print("[HW] Set Pin Value: ");
-            Serial.println(state);
-#endif
+#if defined(MJB_DEBUG_LOGGING_PIN)
+            MJB_DEBUG_LOG_LINE("[HW] Set Pin  Mode: OUTPUT");
+            MJB_DEBUG_LOG("[HW] Set Pin Value: ");
+            MJB_DEBUG_LOG_LINE(state);
 #endif
 
-#ifndef HARDWARE_INDEPENDENT
+#if defined(MJB_HW_IO_PINS_AVAILABLE)
             pinMode(this->identity(), OUTPUT);
             digitalWrite(this->identity(), state);
 #endif
@@ -112,58 +111,42 @@ void Pin::setConfiguration(Pin::Configuration const &configuration)
     this->setState(configuration.value);
 }
 
-Pin::Set Pin::AllocateSet(Pin::Arrangement const &pins)
+Pin::Set Pin::MakeSet(Pin::Arrangement const &pins)
 {
     Pin::Set set;
     for (Pin::Identifier const identifier : pins)
     {
-        //set.emplace(identifier, Pin(identifier));
-        set.emplace(identifier, new Pin(identifier));
+        set.emplace(identifier, std::make_shared<Pin>(identifier));
     }
     return set;
 }
 
-void Pin::DeallocateSet(Pin::Set const &pins)
-{
-    for (Pin::Set::value_type const &pin : pins)
-    {
-        delete pin.second;
-    }
-}
-
-bool Pin::_Reserve(Pin * const pin)
+bool Pin::_Reserve(std::shared_ptr<Pin> const &pin)
 {
     // Note: Count is optimal here due to the fact _pins is a map log(n).
-    if (!pin || Pin::_Reserved.count(pin->identity()) > 0) return false;
-    Pin::_Reserved[pin->identity()] = pin;
+    if (!pin || Pin::_Reserved().count(pin->identity()) > 0) return false;
+    Pin::_Reserved()[pin->identity()] = pin;
     return true;
 }
 
-bool Pin::_Release(Pin const * const pin)
+bool Pin::_Release(std::shared_ptr<Pin> const &pin)
 {
     if (!pin || !pin->ready()) return false;
     Pin::Identifier const identity = pin->identity();
     // Invalidate current owner, since it's no longer in control.
-    Pin::_Reserved[identity]->_mode = Pin::Mode::Invalid;
-    return Pin::_Reserved.erase(identity);
+    Pin::_Reserved()[identity]->_mode = Pin::Mode::Invalid;
+    return Pin::_Reserved().erase(identity);
 }
 
 Pin::Pin(Pin::Identifier const identifier):
 _identity(identifier),
 _value(0),
-_mode(Pin::Mode::Auto)
+_mode(Pin::Mode::Invalid)
 {
-    this->setMode(Pin::_Reserve(this)? Pin::Mode::Auto : Pin::Mode::Invalid);
+#if defined(MJB_HW_IO_PINS_AVAILABLE)
+    this->setMode(Pin::_Reserve(std::static_pointer_cast<Pin>(self()))? Pin::Mode::Auto : Pin::Mode::Invalid);
+#endif
 }
-
-/*Pin::Pin(Pin const &pin):
-_identity(pin._identity),
-_value(pin._value),
-_mode(pin._mode)
-{
-    // A copy invalidates the previous Pin, giving the copy precedence.
-    if (Pin::_Release(&pin)) Pin::_Reserve(this);
-}*/
 
 Pin::Pin():
 _identity(0),
@@ -175,6 +158,6 @@ _mode(Pin::Mode::Invalid)
 
 Pin::~Pin()
 {
-    Pin::_Release(this);
+    Pin::_Release(std::static_pointer_cast<Pin>(self()));
 }
 

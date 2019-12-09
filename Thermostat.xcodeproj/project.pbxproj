@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		C3038AB61E29DB8B005F50CF /* Identifiable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3038AB41E29DB8B005F50CF /* Identifiable.cpp */; };
+		C331BC9C2192AB6C0023A82F /* Accessible.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C331BC9A2192AB6C0023A82F /* Accessible.cpp */; };
 		C3584C471E271C000039D951 /* Pin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3584C381E271C000039D951 /* Pin.cpp */; };
 		C3584C481E271C000039D951 /* Actuator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3584C3A1E271C000039D951 /* Actuator.cpp */; };
 		C3584C491E271C000039D951 /* Sensor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3584C3C1E271C000039D951 /* Sensor.cpp */; };
@@ -16,6 +17,7 @@
 		C3584C4C1E271C000039D951 /* Scheduler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3584C421E271C000039D951 /* Scheduler.cpp */; };
 		C3584C4D1E271C000039D951 /* Thermostat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3584C441E271C000039D951 /* Thermostat.cpp */; };
 		C3584C4E1E271C000039D951 /* Tester.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3584C461E271C000039D951 /* Tester.cpp */; };
+		C3D05B4C239D9FCB00A5F7FB /* Delegable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3D05B4B239D9FCB00A5F7FB /* Delegable.cpp */; };
 		C3F875501E2C168D00020493 /* DHT22.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3F8754E1E2C168D00020493 /* DHT22.cpp */; };
 /* End PBXBuildFile section */
 
@@ -34,6 +36,9 @@
 /* Begin PBXFileReference section */
 		C3038AB41E29DB8B005F50CF /* Identifiable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Identifiable.cpp; sourceTree = "<group>"; };
 		C3038AB51E29DB8B005F50CF /* Identifiable.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Identifiable.hpp; sourceTree = "<group>"; };
+		C331BC9A2192AB6C0023A82F /* Accessible.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Accessible.cpp; sourceTree = "<group>"; };
+		C331BC9B2192AB6C0023A82F /* Accessible.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Accessible.hpp; sourceTree = "<group>"; };
+		C33D652F223D9EA2004658DB /* Delegable.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Delegable.hpp; sourceTree = "<group>"; };
 		C3584C371E271C000039D951 /* Development.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Development.hpp; sourceTree = "<group>"; };
 		C3584C381E271C000039D951 /* Pin.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Pin.cpp; sourceTree = "<group>"; };
 		C3584C391E271C000039D951 /* Pin.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Pin.hpp; sourceTree = "<group>"; };
@@ -50,7 +55,9 @@
 		C3584C441E271C000039D951 /* Thermostat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Thermostat.cpp; sourceTree = "<group>"; };
 		C3584C451E271C000039D951 /* Thermostat.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Thermostat.hpp; sourceTree = "<group>"; };
 		C3584C461E271C000039D951 /* Tester.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tester.cpp; sourceTree = "<group>"; };
-		C38D32B01E236AAF00E5B10B /* Thermostat.ino */ = {isa = PBXFileReference; lastKnownFileType = text; path = Thermostat.ino; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		C38D32B01E236AAF00E5B10B /* Thermostat.ino */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; path = Thermostat.ino; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		C38DD495239CF45A00575BBE /* makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; usesTabs = 1; };
+		C3D05B4B239D9FCB00A5F7FB /* Delegable.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Delegable.cpp; sourceTree = "<group>"; };
 		C3F8754E1E2C168D00020493 /* DHT22.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DHT22.cpp; sourceTree = "<group>"; usesTabs = 0; };
 		C3F8754F1E2C168D00020493 /* DHT22.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = DHT22.hpp; sourceTree = "<group>"; usesTabs = 0; };
 		C3FFC2441DD7B56E00C5B641 /* Thermostat */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Thermostat; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -91,8 +98,12 @@
 				C3FFC26C1DD7C2E800C5B641 /* README.md */,
 				C3FFC26D1DD7C2E800C5B641 /* LICENSE */,
 				C3584C371E271C000039D951 /* Development.hpp */,
+				C331BC9A2192AB6C0023A82F /* Accessible.cpp */,
+				C331BC9B2192AB6C0023A82F /* Accessible.hpp */,
 				C3038AB41E29DB8B005F50CF /* Identifiable.cpp */,
 				C3038AB51E29DB8B005F50CF /* Identifiable.hpp */,
+				C3D05B4B239D9FCB00A5F7FB /* Delegable.cpp */,
+				C33D652F223D9EA2004658DB /* Delegable.hpp */,
 				C3584C381E271C000039D951 /* Pin.cpp */,
 				C3584C391E271C000039D951 /* Pin.hpp */,
 				C3584C3A1E271C000039D951 /* Actuator.cpp */,
@@ -111,6 +122,7 @@
 				C3F8754F1E2C168D00020493 /* DHT22.hpp */,
 				C3584C461E271C000039D951 /* Tester.cpp */,
 				C38D32B01E236AAF00E5B10B /* Thermostat.ino */,
+				C38DD495239CF45A00575BBE /* makefile */,
 			);
 			path = Thermostat;
 			sourceTree = "<group>";
@@ -174,6 +186,7 @@
 			files = (
 				C3038AB61E29DB8B005F50CF /* Identifiable.cpp in Sources */,
 				C3584C481E271C000039D951 /* Actuator.cpp in Sources */,
+				C331BC9C2192AB6C0023A82F /* Accessible.cpp in Sources */,
 				C3584C4D1E271C000039D951 /* Thermostat.cpp in Sources */,
 				C3584C4E1E271C000039D951 /* Tester.cpp in Sources */,
 				C3F875501E2C168D00020493 /* DHT22.cpp in Sources */,
@@ -182,6 +195,7 @@
 				C3584C4A1E271C000039D951 /* Temperature.cpp in Sources */,
 				C3584C491E271C000039D951 /* Sensor.cpp in Sources */,
 				C3584C4B1E271C000039D951 /* Thermometer.cpp in Sources */,
+				C3D05B4C239D9FCB00A5F7FB /* Delegable.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -191,7 +205,7 @@
 		C3FFC2491DD7B56E00C5B641 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -238,8 +252,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "~/Library/Arduino15/packages/esp8266/hardware/esp8266/2.3.0/**";
-				LIBRARY_SEARCH_PATHS = "~/Library/Arduino15/packages/esp8266/hardware/esp8266/2.3.0/**";
+				HEADER_SEARCH_PATHS = "";
+				LIBRARY_SEARCH_PATHS = "";
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -250,7 +264,7 @@
 		C3FFC24A1DD7B56E00C5B641 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = YES;
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
@@ -290,8 +304,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "~/Library/Arduino15/packages/esp8266/hardware/esp8266/2.3.0/**";
-				LIBRARY_SEARCH_PATHS = "~/Library/Arduino15/packages/esp8266/hardware/esp8266/2.3.0/**";
+				HEADER_SEARCH_PATHS = "";
+				LIBRARY_SEARCH_PATHS = "";
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;

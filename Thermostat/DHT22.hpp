@@ -13,17 +13,16 @@
 #include <utility>
 #include "Development.hpp"
 #include "Pin.hpp"
-#include "Actuator.hpp"
 #include "Sensor.hpp"
 #include "Thermometer.hpp"
 #include "Temperature.hpp"
 #include "Scheduler.hpp"
 
 
-#ifdef HARDWARE_INDEPENDENT
-#include <iostream>
-#else
+#if defined(MJB_ARDUINO_LIB_API)
 #include <Arduino.h>
+#else
+#include <iostream>
 #endif
 
 // We must wait about 2 seconds after sensing again with DHT22.
@@ -55,7 +54,7 @@ protected:
     
 };
 
-#ifdef HARDWARE_INDEPENDENT
+#if ! defined(MJB_ARDUINO_LIB_API)
 void delayMicroseconds(unsigned long time); // Fake test function.
 #endif
 

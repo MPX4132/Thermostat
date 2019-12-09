@@ -12,10 +12,9 @@
 #include <map>
 #include <vector>
 #include "Development.hpp"
+#include "Accessible.hpp"
 
-#ifdef HARDWARE_INDEPENDENT
-#include <iostream>
-#else
+#if defined(MJB_ARDUINO_LIB_API)
 #include <Arduino.h>
 #endif
 
@@ -23,15 +22,14 @@
 // Pin : This class abstracts the I/O pins found on the development board. The
 // class keeps track of all pins available.
 // =============================================================================
-class Pin
+class Pin : public Accessible
 {
   public:
     
     typedef unsigned int Identifier;
     typedef short Value;
-    
-    //typedef std::map<Identifier, Pin> Set;
-    typedef std::map<Identifier, Pin *> Set;
+
+    typedef std::map<Identifier, std::shared_ptr<Pin>> Set;
     typedef std::vector<Identifier> Arrangement;
     
     enum Mode
@@ -61,28 +59,23 @@ class Pin
 
     Configuration configuration() const;
     void setConfiguration(Configuration const &configuration);
-    
-    static Set AllocateSet(Arrangement const &pins);
-    static void DeallocateSet(Set const &pins);
-    
+
+    static Set MakeSet(Arrangement const &pins);
+
     Pin(Identifier const identifier);
-    //Pin(Pin const &pin);
     Pin();
     ~Pin();
 
   protected:
     
-    //typedef std::map<Identifier, Pin *> Association;
-    
     Identifier const _identity;
     Value _value;
     Mode _mode;
-    
-    //static Association _Reserved;
-    static Set _Reserved;
 
-    static bool _Reserve(Pin * const pin);
-    static bool _Release(Pin const * const pin);
+    inline static Set &_Reserved();
+
+    static bool _Reserve(std::shared_ptr<Pin> const &pin);
+    static bool _Release(std::shared_ptr<Pin> const &pin);
 };
 
 #endif /* Pin_hpp */

@@ -11,9 +11,10 @@
 // =============================================================================
 // Scheduler : Static Variables Declaration
 // =============================================================================
-std::set<Scheduler * const> &Scheduler::_InstanceRegister()
+std::set<Scheduler *> &Scheduler::_InstanceRegister()
 {
-    static std::set<Scheduler * const> _instanceRegister;
+    // TODO: Make type below "Scheduler * const" when compiler gets its shit together.
+    static std::set<Scheduler *> _instanceRegister;
     return _instanceRegister;
 }
 
@@ -428,7 +429,7 @@ void Scheduler::_processEventsForTime(Scheduler::Time const time)
 }
 
 bool Scheduler::_EnqueueTasksEvent(Scheduler::Tasks &tasks,
-                                   Scheduler::Task::Event const &event)
+                                   std::shared_ptr<Scheduler::Event> const &event)
 {
     // Passing priority to prevent the task instance inserting the element (temporary task obj.)
     // We're just concerend with getting the Task instance matching this one's priority.
@@ -456,7 +457,7 @@ bool Scheduler::_EnqueueTasksEvent(Scheduler::Tasks &tasks,
 }
 
 bool Scheduler::_DequeueTasksEvent(Scheduler::Tasks &tasks,
-                                   Scheduler::Task::Event const &event)
+                                   std::shared_ptr<Scheduler::Event> const &event)
 {
     bool dequeuedTaskEvent = false; // Assume we won't find the event within any task.
     Scheduler::Tasks::const_iterator const task = tasks.find(Scheduler::Task(event->executeTime()));

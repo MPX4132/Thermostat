@@ -40,13 +40,15 @@ Pin::Identifier const thermostatBlowerPin = 14;
 Pin::Identifier const thermostatCoolingPin = 12;
 Pin::Identifier const thermostatHeatingPin = 13;
 
+std::shared_ptr<DHT22> thermometer(std::make_shared<DHT22>(temperatureSensorDataPin));
+
 Thermostat thermostat(Pin::Arrangement({
     thermostatBlowerPin,
     thermostatCoolingPin,
     thermostatHeatingPin
 }), Thermostat::Thermometers({
     // DHT22 should stabilize while waiting for WIFI to connect.
-    std::make_shared<DHT22>(temperatureSensorDataPin)
+    thermometer
 }));
 
 #if defined(MJB_ARDUINO_LIB_API)
@@ -119,16 +121,16 @@ void setup()
         if (modeArgument.length())
         {
             if (modeArgument.equals("auto") || modeArgument.equals("3"))
-                thermostat->setMode(Thermostat::Mode::Auto);
+                thermostat.setMode(Thermostat::Mode::Auto);
             else
             if (modeArgument.equals("cool") || modeArgument.equals("2"))
-                thermostat->setMode(Thermostat::Mode::Cool);
+                thermostat.setMode(Thermostat::Mode::Cool);
             else
             if (modeArgument.equals("heat") || modeArgument.equals("1"))
-                thermostat->setMode(Thermostat::Mode::Heat);
+                thermostat.setMode(Thermostat::Mode::Heat);
             else
             if (modeArgument.equals("off") || modeArgument.equals("0"))
-                thermostat->setMode(Thermostat::Mode::Off);
+                thermostat.setMode(Thermostat::Mode::Off);
         }
         
         String tempArgument = server.arg("temp");
@@ -150,7 +152,7 @@ void setup()
                 // if it is 0 we must check it indeed was set and isn't an issue with parsing.
                 if (value || (tempArgument.length() == 1 && tempArgument[0] == '0'))
                 {
-                    thermostat->setTargetTemperature(Temperature<float>(value, static_cast<Temperature<float>::Scale>(scale)));
+                    thermostat.setTargetTemperature(Temperature<float>(value, static_cast<Temperature<float>::Scale>(scale)));
                 }
             }
         }
@@ -159,15 +161,15 @@ void setup()
         if (tempTypeArgument.length())
         {
             if (tempTypeArgument.equals("HI") || tempTypeArgument.equals("1"))
-                thermostat->setMeasurementType(Thermostat::Measurement::HeatIndexUnit);
+                thermostat.setPerceptionIndex(Thermostat::PerceptionIndex::HeatIndex);
             else
             if (tempTypeArgument.equals("T") || tempTypeArgument.equals("0"))
-                thermostat->setMeasurementType(Thermostat::Measurement::TemperatureUnit);
+                thermostat.setPerceptionIndex(Thermostat::PerceptionIndex::TemperatureIndex);
         }
         
         // Push changes by manually updating the instance.
         // This will reflect changes immediately which will be sent as JSON.
-        thermostat->update(micros());
+        thermostat.update(micros());
         
         server.send(200, "application/json", GetStatusData());
     });
@@ -217,20 +219,20 @@ String GetStatusData()
 {
     String statusData;
     statusData += "{\"temperature\": {\"current\":";
-    statusData += thermostat->temperature().value();
+    statusData += thermostat.temperature().value();
     statusData += ",\"target\":";
-    statusData += thermostat->targetTemperature().value();
+    statusData += thermostat.targetTemperature().value();
     statusData += ",\"scale\":\"K\",\"delay\":\"?\"}";
     statusData += ",\"humiture\":";
-    statusData += thermostat->humiture().value();
+    statusData += thermostat.humiture().value();
     statusData += ",\"measurement\":";
-    statusData += thermostat->measurementType();
+    statusData += thermostat.perceptionIndex();
     statusData += ",\"humidity\":{\"current\":";
     statusData += thermometer->humidity();
     statusData += "},\"mode\":";
-    statusData += thermostat->mode();
+    statusData += thermostat.mode();
     statusData += ",\"status\":";
-    statusData += thermostat->status();
+    statusData += thermostat.status();
     statusData += "}";
     return statusData;
 }

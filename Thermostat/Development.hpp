@@ -11,7 +11,7 @@
 
 #define MJB_DEBUG_LOGGING
 
-#if defined(__AVR__)
+#if defined(ARDUINO) || defined(__AVR__) || defined(ESP8266)
     #define MJB_DEBUG_LOG_HW_DEPENDENT
     #define MJB_ARDUINO_LIB_API
     #define MJB_HW_IO_PINS_AVAILABLE
@@ -21,7 +21,6 @@
 
 #if defined(MJB_DEBUG_LOGGING)
     #if defined(MJB_DEBUG_LOG_HW_DEPENDENT)
-        #include <Print> // TODO: Find the correct header.
         #define MJB_DEBUG_LOG_HEX HEX
         #define MJB_DEBUG_LOG_BIN BIN
         #define MJB_DEBUG_LOG_OCT OCT

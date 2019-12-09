@@ -121,8 +121,6 @@ protected:
     // =========================================================================
     struct Task
     {
-        typedef std::shared_ptr<Event> Event;
-
         bool operator<(Task const &other) const;
         bool operator>(Task const &other) const;
         bool operator==(Task const &other) const;
@@ -134,13 +132,13 @@ protected:
         // mutable because I've got a set of Task, and sets only return
         // const_iterator (or implicitly const iterator), and the events member
         // needs to be mutable (note, it doesn't affect Task's key/order in set).
-        mutable std::set<Event> events;
+        mutable std::set<std::shared_ptr<Event>> events;
         
         // For the assignment operator, the value below must be modifiable.
         Time priority; // Non-const becuase it's casted as const anyway by set.
         
         Task(Task const &task);
-        Task(Event const &event);
+        Task(std::shared_ptr<Event> const &event);
         Task(Time const priority);
     };
 
@@ -157,13 +155,13 @@ protected:
     
     void _processEventsForTime(Time const priority);
     
-    static bool _EnqueueTasksEvent(Tasks &tasks, Task::Event const &event);
-    static bool _DequeueTasksEvent(Tasks &tasks, Task::Event const &event);
+    static bool _EnqueueTasksEvent(Tasks &tasks, std::shared_ptr<Event> const &event);
+    static bool _DequeueTasksEvent(Tasks &tasks, std::shared_ptr<Event> const &event);
     
     // The following static member holds all instances created of Scheduler,
     // which the class uses to update by calling the static UpdateInstances
     // method once an update cycle is being executed.
-    inline static std::set<Scheduler * const> &_InstanceRegister();
+    inline static std::set<Scheduler *> &_InstanceRegister();
 #if defined(MJB_MULTITHREAD_CAPABLE)
     static std::mutex _InstanceRegisterLock;
 #endif

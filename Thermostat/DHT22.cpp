@@ -106,10 +106,15 @@ Sensor::Data DHT22::sense() {
             byte = (byte << 1) | (timeB - timeA > 50);
         }
     }
+
+    // Humidity (percentage) is in unsigned scalar format, x10 scaled.
+    float const humidity = static_cast<float>((static_cast<uint16_t>(data[0]) << 8) | data[1]) / 10;
+
+    // Temperature (Celcius) is in signed-magnitude format, x10 scaled.
+    uint16_t const tRaw = ((static_cast<uint16_t>(data[2]) << 8) | data[3]);
     
-    // NOTE: Temperature is in Celcius and is x10 scaled, including humidity.
-    float const humidity = static_cast<float>(((static_cast<unsigned short>(data[0]) << 8) | data[1])) / 10;
-    float const temperature = static_cast<float>(((static_cast<unsigned short>(data[2]) << 8) | data[3])) / 10;
+    // Temperature (Celcius) must be converted from signed-magnitude to two's complement.
+    float const temperature = static_cast<float>((tRaw & 0x7FFF) * ((tRaw & 0x8000)? -1 : 1)) / 10;
 
 #if defined(MJB_DEBUG_LOGGING_DHT22)
     MJB_DEBUG_LOG("[DHT22 <");

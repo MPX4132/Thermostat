@@ -24,7 +24,7 @@ Thermometer::TemperatureUnit Thermometer::humiture()
     // Returns the heat index, aka, the "feels like" temperature.
     // Heat Index is determined by Rothfusz Steadman's equation.
     float const t = temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit);
-    float const h = humidity();
+    float const h = humidity() / 100;
     float const tt = t * t;
     float const hh = h * h;
     float const th = t * h;
@@ -33,7 +33,6 @@ Thermometer::TemperatureUnit Thermometer::humiture()
     // (obtained from Wikipedia), and integrates more temperatures.
     // NOTE: ±3 degrees between 70-115F, and humidity of 0-80%
     // NOTE: [Functional] range is for temperatures below 150F.
-#warning Verify the range of the humidity is in fact between 0 and 1.
     if ((t < 70) || (t > 115) || (h < 0) || (h > 0.80))
         return Thermometer::TemperatureUnit(temperature());
     

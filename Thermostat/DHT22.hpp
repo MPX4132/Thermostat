@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <utility>
+#include <cstdint>
 #include "Development.hpp"
 #include "Pin.hpp"
 #include "Sensor.hpp"

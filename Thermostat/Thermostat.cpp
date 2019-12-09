@@ -103,10 +103,10 @@ int Thermostat::update(Scheduler::Time const time)
 
 Thermostat::Status Thermostat::_standby(Thermostat::Status const status)
 {
-    actuate({ // Toggle all pins to 0, or release all relays, immediately.
-        {_pinout[Thermostat::SignalLine::FanCall],  {Pin::Mode::Output, 0}, 0},
-        {_pinout[Thermostat::SignalLine::CoolCall], {Pin::Mode::Output, 0}, 0},
-        {_pinout[Thermostat::SignalLine::HeatCall], {Pin::Mode::Output, 0}, 0}
+    _controller.actuate({ // Toggle all pins to 0, or release all relays, immediately.
+        {_controller.pinout[Thermostat::SignalLine::FanCall],  {Pin::Mode::Output, 0}, 0},
+        {_controller.pinout[Thermostat::SignalLine::CoolCall], {Pin::Mode::Output, 0}, 0},
+        {_controller.pinout[Thermostat::SignalLine::HeatCall], {Pin::Mode::Output, 0}, 0}
     });
     
     return status;
@@ -114,20 +114,20 @@ Thermostat::Status Thermostat::_standby(Thermostat::Status const status)
 
 Thermostat::Status Thermostat::_setCooler(bool const cool)
 {
-    actuate({ // Cool & Fan on if above target temp, off otherwise.
-        {_pinout[Thermostat::SignalLine::FanCall],  {Pin::Mode::Output, cool}, 0},
-        {_pinout[Thermostat::SignalLine::CoolCall], {Pin::Mode::Output, cool}, 0},
-        {_pinout[Thermostat::SignalLine::HeatCall], {Pin::Mode::Output,    0}, 0}
+    _controller.actuate({ // Cool & Fan on if above target temp, off otherwise.
+        {_controller.pinout[Thermostat::SignalLine::FanCall],  {Pin::Mode::Output, cool}, 0},
+        {_controller.pinout[Thermostat::SignalLine::CoolCall], {Pin::Mode::Output, cool}, 0},
+        {_controller.pinout[Thermostat::SignalLine::HeatCall], {Pin::Mode::Output,    0}, 0}
     });
     return cool? Thermostat::Status::Cooling : Thermostat::Status::Standby;
 }
 
 Thermostat::Status Thermostat::_setHeater(bool const heat)
 {
-    actuate({ // Heat & Fan on if below target temp, off otherwise.
-        {_pinout[Thermostat::SignalLine::FanCall],  {Pin::Mode::Output, heat}, 0},
-        {_pinout[Thermostat::SignalLine::CoolCall], {Pin::Mode::Output,    0}, 0},
-        {_pinout[Thermostat::SignalLine::HeatCall], {Pin::Mode::Output, heat}, 0}
+    _controller.actuate({ // Heat & Fan on if below target temp, off otherwise.
+        {_controller.pinout[Thermostat::SignalLine::FanCall],  {Pin::Mode::Output, heat}, 0},
+        {_controller.pinout[Thermostat::SignalLine::CoolCall], {Pin::Mode::Output,    0}, 0},
+        {_controller.pinout[Thermostat::SignalLine::HeatCall], {Pin::Mode::Output, heat}, 0}
     });
     return heat? Thermostat::Status::Heating : Thermostat::Status::Standby;
 }
@@ -136,7 +136,7 @@ int Thermostat::execute(Scheduler::Time const updateTime)
 {
     // Verify minimum pin count to properly operate an HVAC with relays (min 3).
     // Why 3? Well: Fan call pin, Cool call pin, & Heat call pin.
-    if (_pins.size() < 3) {
+    if (_controller.pinout.size() < 3) {
 #if defined(MJB_DEBUG_LOGGING_THERMOSTAT)
         MJB_DEBUG_LOG("[Thermostat <");
         MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
@@ -146,7 +146,7 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     }
     
     // Check Actuator instance Pins are ready for operations.
-    if (!ready()) {
+    if (_controller.status() != Actuator::Status::Ready) {
 #if defined(MJB_DEBUG_LOGGING_THERMOSTAT)
         MJB_DEBUG_LOG("[Thermostat <");
         MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
@@ -220,12 +220,12 @@ int Thermostat::execute(Scheduler::Time const updateTime)
 Thermostat::Thermostat(Pin::Arrangement const &pins,
                        Thermometers const &thermometers,
                        Scheduler::Time const executeTimeInterval):
-Actuator(pins),
 Scheduler::Daemon(0, executeTimeInterval),
 thermometers(thermometers),
 _perceptionIndex(Thermostat::PerceptionIndex::TemperatureIndex),
 _status(Thermostat::Status::Standby),
-_mode(Thermostat::Mode::Off)
+_mode(Thermostat::Mode::Off),
+_controller(pins)
 {
     // targetTemp, targetTempThresh & _scheduler are fine auto-initialized.
     _scheduler.enqueue(std::static_pointer_cast<Scheduler::Event>(Scheduler::Event::self()));

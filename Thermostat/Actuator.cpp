@@ -26,12 +26,21 @@ time(time)
 #undef max
 #define RESTORE_max_P1
 #endif
-bool Actuator::ready() const
+Actuator::Status Actuator::status() const
 {
     for (Pin::Set::value_type const &pair : _pins)
     {
         // Check if pin isn't yet ready to actuate.
-        if (!pair.second->ready()) return false;
+        if (!pair.second->ready())
+        {
+#if defined(MJB_DEBUG_LOGGING_ACTUATOR)
+            MJB_DEBUG_LOG("[Actuator <");
+            MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+            MJB_DEBUG_LOG(">] NOTICE: Waiting on pin ");
+            MJB_DEBUG_LOG_LINE_FORMAT(pair.second->identity(), MJB_DEBUG_LOG_DEC);
+#endif
+            return Actuator::Status::WaitingOnPins;
+        }
     }
     
     Scheduler::Time const currentTime = micros();
@@ -43,7 +52,18 @@ bool Actuator::ready() const
         ((std::numeric_limits<Scheduler::Time>::max() - _actuateTime) + currentTime);
 
     // If the actuator time-out/cool-down time has passed, it's ready to actuate.
-    return elapsedTime > _actuateTimeout;
+    if (elapsedTime <= _actuateTimeout)
+    {
+#if defined(MJB_DEBUG_LOGGING_ACTUATOR)
+        MJB_DEBUG_LOG("[Actuator <");
+        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+        MJB_DEBUG_LOG(">] NOTICE: Waiting on timeout; remaining: ");
+        MJB_DEBUG_LOG_LINE_FORMAT((_actuateTime - elapsedTime), MJB_DEBUG_LOG_DEC);
+#endif
+        return Actuator::Status::WaitingOnTimeout;
+    }
+
+    return Actuator::Status::Ready;
 }
 #ifdef RESTORE_max_P1
 #pragma pop_macro("max")
@@ -92,8 +112,8 @@ Actuator::Event::~Event()
 #define RESTORE_max_P2
 #endif
 Actuator::Actuator(Pin::Arrangement const &pins, Scheduler::Time const actuateTimeout):
+pinout(pins),
 _pins(Pin::MakeSet(pins)),
-_pinout(pins),
 _actuateTimeout(actuateTimeout),
 // The following will force the instance to be ready as soon as it's initialized.
 _actuateTime(std::numeric_limits<Scheduler::Time>::max() - (actuateTimeout - 1))
@@ -105,8 +125,8 @@ _actuateTime(std::numeric_limits<Scheduler::Time>::max() - (actuateTimeout - 1))
 #endif
 
 Actuator::Actuator(Actuator const &actuator):
+pinout(actuator.pinout),
 _pins(actuator._pins),
-_pinout(actuator._pinout),
 _actuateTimeout(actuator._actuateTimeout),
 _actuateTime(actuator._actuateTime)
 {

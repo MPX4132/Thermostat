@@ -29,6 +29,12 @@
 class Actuator : public Accessible, public SchedulerDelegate
 {
 public:
+    enum Status
+    {
+        WaitingOnPins,
+        WaitingOnTimeout,
+        Ready
+    };
     
     // This is the public interface for a Pin events, designed like this due to:
     // * [Security] Pins are encapsulated in the instance of an Actuator so that
@@ -46,8 +52,10 @@ public:
     };
     
     typedef std::vector<Action> Actions;
+
+    Pin::Arrangement const pinout;
     
-    virtual bool ready() const;
+    virtual Status status() const;
     virtual void actuate(Actions const &actions);
     
     Actuator(Pin::Arrangement const &pins, Scheduler::Time const actuateTimeout = 0);
@@ -73,7 +81,6 @@ protected:
     };
     
     Pin::Set _pins;
-    Pin::Arrangement _pinout;
     
     Scheduler::Time const _actuateTimeout;
     Scheduler::Time _actuateTime;

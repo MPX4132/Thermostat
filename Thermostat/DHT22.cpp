@@ -24,19 +24,12 @@ Sensor::Data DHT22::sense() {
     
     // Assure all pins are ready to use (data line).
     // If the sensor isn't ready, return empty data.
-    if (!this->ready()) {
-#if defined(MJB_DEBUG_LOGGING_DHT22)
-        MJB_DEBUG_LOG("[DHT22 <");
-        MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
-        MJB_DEBUG_LOG_LINE(">] WARNING: Sensor not ready!");
-#endif
-        return Sensor::Data();
-    }
+    if (status() != Actuator::Status::Ready) return Sensor::Data();
     
     Sensor::Data data(5); // Buffer for data (40-bit)
     
     // Prepare data pin for operation.
-    Pin &dataPin = *(this->_pins[this->_pinout[DHT22::Pinout::Data]]);
+    Pin &dataPin = *(_pins[pinout[DHT22::Pinout::Data]]);
     dataPin.setMode(Pin::Mode::Output);
     
     // ============================================================
@@ -159,7 +152,7 @@ Sensor::Data DHT22::sense() {
     MJB_DEBUG_LOG_LINE((unsigned short) data[4]);
 #endif
     
-    if (this->_validData(data)) // Update cached values only if valid data received.
+    if (_validData(data)) // Update cached values only if valid data received.
     {
 #if defined(MJB_DEBUG_LOGGING_DHT22)
         MJB_DEBUG_LOG("[DHT22 <");
@@ -172,8 +165,8 @@ Sensor::Data DHT22::sense() {
         MJB_DEBUG_LOG(" H: ");
         MJB_DEBUG_LOG_LINE(humidity);
 #endif
-        this->_temperature = Thermometer::TemperatureUnit(temperature, Thermometer::TemperatureUnit::Scale::Celsius);
-        this->_humidity = humidity;
+        _temperature = Thermometer::TemperatureUnit(temperature, Thermometer::TemperatureUnit::Scale::Celsius);
+        _humidity = humidity;
     }
 #if defined(MJB_DEBUG_LOGGING_DHT22)
     else

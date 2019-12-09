@@ -27,9 +27,7 @@
 // Thermostat : This class abstracts the functionality of an HVAC control system
 // and provides a simplistic interface for interacting with it.
 // =============================================================================
-class Thermostat :
-protected Actuator,
-protected Scheduler::Daemon
+class Thermostat : protected Scheduler::Daemon
 {
 public:
     // ================================================================
@@ -119,11 +117,9 @@ protected:
     PerceptionIndex _perceptionIndex;
     Status _status;
     Mode _mode;
-    
-    // This scheduler shadows the Actuator scheduler, which is what we
-    // need since the Actuator auto-deletes all events that are done.
-    // That means when the Thermostat finishes it would crash because
-    // the Actuator would try to delete the auto-generated instance.
+
+    Actuator _controller;
+
     Scheduler _scheduler;
     
     Status _standby(Status const status = Standby);

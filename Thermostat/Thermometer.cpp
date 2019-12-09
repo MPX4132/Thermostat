@@ -13,18 +13,18 @@
 // =============================================================================
 Thermometer::TemperatureUnit Thermometer::temperature()
 {
-    this->sense(); // Attempt to get new sensory data.
-    return this->_temperature;
+    sense(); // Attempt to get new sensory data.
+    return _temperature;
 }
 
 Thermometer::TemperatureUnit Thermometer::humiture()
 {
-    this->sense(); // Attempt to get new sensory data.
+    sense(); // Attempt to get new sensory data.
     
     // Returns the heat index, aka, the "feels like" temperature.
     // Heat Index is determined by Rothfusz Steadman's equation.
-    float const t = this->temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit);
-    float const h = this->humidity();
+    float const t = temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit);
+    float const h = humidity();
     float const tt = t * t;
     float const hh = h * h;
     float const th = t * h;
@@ -35,7 +35,7 @@ Thermometer::TemperatureUnit Thermometer::humiture()
     // NOTE: [Functional] range is for temperatures below 150F.
 #warning Verify the range of the humidity is in fact between 0 and 1.
     if ((t < 70) || (t > 115) || (h < 0) || (h > 0.80))
-        return Thermometer::TemperatureUnit(this->temperature());
+        return Thermometer::TemperatureUnit(temperature());
     
     return Thermometer::TemperatureUnit(0.363445176f +
                                         0.988622465f * t +
@@ -50,18 +50,18 @@ Thermometer::TemperatureUnit Thermometer::humiture()
 
 float Thermometer::humidity()
 {
-    this->sense(); // Attempt to get new sensory data.
-    return this->_humidity;
+    sense(); // Attempt to get new sensory data.
+    return _humidity;
 }
 
 Thermometer::Range Thermometer::range() const
 {
-    return this->_range;
+    return _range;
 }
 
 bool Thermometer::_validTemperature(Thermometer::TemperatureUnit const &temperature)
 {
-    return temperature >= this->range().first && temperature <= this->range().second;
+    return ((temperature >= range().first) && (temperature <= range().second));
 }
 
 Thermometer::Thermometer(Pin::Arrangement const &pins,

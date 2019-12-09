@@ -14,7 +14,7 @@ std::shared_ptr<Accessible> const &Accessible::self() const
 }
 
 Accessible::Accessible():
-_self(this, [](Accessible * const accessible){})
+_self(this, [](Accessible * const accessible){(void) accessible;})
 {}
 
 Accessible::~Accessible()

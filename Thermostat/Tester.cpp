@@ -20,6 +20,9 @@ Scheduler::Time micros()
 }
 
 int main(int argc, const char * argv[]) {
+    // The following done to suppress unused variable warnings.
+    (void) argc;
+    (void) argv;
     setup();
     for (;;) loop();
     return 0;

@@ -84,7 +84,8 @@ bool Scheduler::Event::setScheduler(std::weak_ptr<Scheduler> const &scheduler)
 
 void Scheduler::Event::_executeTimeDidChange(Scheduler::Time const executeTimeDelta)
 {
-
+    // The following done to suppress unused variable warnings.
+    (void) executeTimeDelta;
 }
 
 Scheduler::Event::Event(Scheduler::Time const executeTime):
@@ -122,7 +123,8 @@ bool Scheduler::Daemon::finished() const
 
 void Scheduler::Daemon::_executeTimeIntervalDidChange(Scheduler::Time const executeTimeIntervalDelta)
 {
-
+    // The following done to suppress unused variable warnings.
+    (void) executeTimeIntervalDelta;
 }
 
 Scheduler::Daemon::Daemon(Scheduler::Time const executeTime,
@@ -145,6 +147,9 @@ Scheduler::Daemon::~Daemon()
 void SchedulerDelegate::schedulerStartingEvent(Scheduler * const scheduler,
                                                std::shared_ptr<Scheduler::Event> const &event)
 {
+    // The following done to suppress unused variable warnings.
+    (void) scheduler;
+    (void) event;
     return; // By default, skip.
 }
 
@@ -152,18 +157,28 @@ void SchedulerDelegate::schedulerCompletedEvent(Scheduler * const scheduler,
                                                 std::shared_ptr<Scheduler::Event> const &event,
                                                 int result)
 {
+    // The following done to suppress unused variable warnings.
+    (void) scheduler;
+    (void) event;
+    (void) result;
     return; // By default, skip.
 }
 
 void SchedulerDelegate::schedulerEnqueuedEvent(Scheduler * const scheduler,
                                                std::shared_ptr<Scheduler::Event> const &event)
 {
+    // The following done to suppress unused variable warnings.
+    (void) scheduler;
+    (void) event;
     return; // By default, skip.
 }
 
 void SchedulerDelegate::schedulerDequeuedEvent(Scheduler * const scheduler,
                                                std::shared_ptr<Scheduler::Event> const &event)
 {
+    // The following done to suppress unused variable warnings.
+    (void) scheduler;
+    (void) event;
     return; // By default, skip.
 }
 

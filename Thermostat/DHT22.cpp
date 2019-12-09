@@ -11,6 +11,8 @@
 #if ! defined(MJB_ARDUINO_LIB_API)
 void delayMicroseconds(unsigned long time)
 {
+    // The following done to suppress unused variable warnings.
+    (void) time;
     // Fake test function.
 }
 #endif

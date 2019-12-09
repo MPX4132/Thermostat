@@ -8,6 +8,9 @@
 
 // Description: This HVAC control system is designed to run on low resource systems.
 
+#ifndef Thermostat_ino
+#define Thermostat_ino
+
 #include "Development.hpp"
 
 #if defined(MJB_ARDUINO_LIB_API)
@@ -231,4 +234,6 @@ String GetStatusData()
     statusData += "}";
     return statusData;
 }
+#endif
+
 #endif

@@ -111,6 +111,9 @@ protected:
     virtual bool _didDelegateWithResult(std::shared_ptr<DelegateType> const &delegate,
                                         bool const delegationResult)
     {
+        // The follow is used/are used to suppress unused variable warnings.
+        (void) delegate;
+        (void) delegationResult;
 #if defined(MJB_DEBUG_LOGGING_DELEGABLE)
         MJB_DEBUG_LOG("<Delegable> did delegate to delegate: ");
         MJB_DEBUG_LOG_LINE(delegate);
@@ -120,6 +123,8 @@ protected:
 
     virtual bool _willDelegateToDelegate(std::shared_ptr<DelegateType> const &delegate)
     {
+        // The follow is used/are used to suppress unused variable warnings.
+        (void) delegate;
 #if defined(MJB_DEBUG_LOGGING_DELEGABLE)
         MJB_DEBUG_LOG("<Delegable> will delegate to delegate: ");
         MJB_DEBUG_LOG_LINE(delegate);
@@ -129,6 +134,8 @@ protected:
 
     virtual bool _didAddDelegate(std::shared_ptr<DelegateType> const &delegate)
     {
+        // The follow is used/are used to suppress unused variable warnings.
+        (void) delegate;
 #if defined(MJB_DEBUG_LOGGING_DELEGABLE)
         MJB_DEBUG_LOG("<Delegable> did add delegate: ");
         MJB_DEBUG_LOG_LINE(delegate);
@@ -138,6 +145,8 @@ protected:
 
     virtual bool _didNotAddDelegate(std::shared_ptr<DelegateType> const &delegate)
     {
+        // The follow is used/are used to suppress unused variable warnings.
+        (void) delegate;
 #if defined(MJB_DEBUG_LOGGING_DELEGABLE)
         MJB_DEBUG_LOG("<Delegable> did not add delegate: ");
         MJB_DEBUG_LOG_LINE(delegate);
@@ -147,6 +156,8 @@ protected:
 
     virtual bool _didRemoveDelegate(std::shared_ptr<DelegateType> const &delegate)
     {
+        // The follow is used/are used to suppress unused variable warnings.
+        (void) delegate;
 #if defined(MJB_DEBUG_LOGGING_DELEGABLE)
         MJB_DEBUG_LOG("<Delegable> did remove delegate: ");
         MJB_DEBUG_LOG_LINE(delegate);
@@ -156,6 +167,8 @@ protected:
 
     virtual bool _didNotRemoveDelegate(std::shared_ptr<DelegateType> const &delegate)
     {
+        // The follow is used/are used to suppress unused variable warnings.
+        (void) delegate;
 #if defined(MJB_DEBUG_LOGGING_DELEGABLE)
         MJB_DEBUG_LOG("<Delegable> did not remove delegate: ");
         MJB_DEBUG_LOG_LINE(delegate);

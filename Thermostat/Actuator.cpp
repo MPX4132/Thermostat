@@ -64,6 +64,8 @@ void Actuator::actuate(Actuator::Actions const &actions)
 
 int Actuator::Event::execute(Scheduler::Time const time)
 {
+    // The following done to suppress unused variable warnings.
+    (void) time;
     _pin->setConfiguration(_configuration);
     return 0;
 }

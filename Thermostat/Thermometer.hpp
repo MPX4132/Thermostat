@@ -33,7 +33,7 @@ public:
     // which are then returned by default. However, these can be overwritten.
     virtual TemperatureUnit temperature();
     virtual TemperatureUnit humiture(); // AKA, Heat Index.
-    virtual float humidity();
+    virtual TemperatureUnit::value_type humidity();
     
     virtual Range range() const;
     
@@ -53,7 +53,7 @@ protected:
     // 2. To cache for values to retrival if the sensor needs to timeout.
     TemperatureUnit _temperature;
     Range const _range;
-    float _humidity;
+    TemperatureUnit::value_type _humidity;
 
     bool _validTemperature(TemperatureUnit const &temperature);
     

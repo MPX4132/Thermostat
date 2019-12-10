@@ -25,21 +25,30 @@ Sensor::Data DHT22::sense() {
     // Assure all pins are ready to use (data line).
     // If the sensor isn't ready, return empty data.
     if (status() != Actuator::Status::Ready) return Sensor::Data();
+
+#if defined(MJB_DEBUG_LOGGING_DHT22)
+    MJB_DEBUG_LOG("[DHT22 <");
+    MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+    MJB_DEBUG_LOG(">] NOTICE: Starting sense operation with status ");
+    MJB_DEBUG_LOG_LINE(status());
+#endif
     
     Sensor::Data data(5); // Buffer for data (40-bit)
     
     // Prepare data pin for operation.
     Pin &dataPin = *(_pins[pinout[DHT22::Pinout::Data]]);
     dataPin.setMode(Pin::Mode::Output);
+
+    Sensor::sense(); // Prevent interrptions by causing timeout.
     
     // ============================================================
     // Pull down for 1000us, then up for 20us to wake DHT22
     // Lower values cause failure sporadically, so these are fine.
     // ============================================================
-    dataPin.setState(0);
+    dataPin.setValue(0);
     delayMicroseconds(1000);
     
-    dataPin.setState(1);
+    dataPin.setValue(1);
     delayMicroseconds(20);
     
     // ============================================================
@@ -56,11 +65,11 @@ Sensor::Data DHT22::sense() {
     
     
     // Check for low, if up return nothing.
-    if (dataPin.state()) {
+    if (dataPin.value()) {
 #if defined(MJB_DEBUG_LOGGING_DHT22)
         MJB_DEBUG_LOG("[DHT22 <");
         MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
-        MJB_DEBUG_LOG_LINE(">] ERROR: No reply from sensor!");
+        MJB_DEBUG_LOG_LINE(">] WARNING: No reply from sensor!");
 #endif
         return Sensor::Data();
     }
@@ -72,7 +81,7 @@ Sensor::Data DHT22::sense() {
     
     
     // Check for high, if low, return nothing.
-    if (!dataPin.state()) {
+    if (!dataPin.value()) {
 #if defined(MJB_DEBUG_LOGGING_DHT22)
         MJB_DEBUG_LOG("[DHT22 <");
         MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
@@ -94,12 +103,12 @@ Sensor::Data DHT22::sense() {
         {
             // Wait for high signal signifying next bit started.
             // WARNING: This needs to be protected for potential hangs.
-            while (!dataPin.state()) continue; // NOTE: BLOCKING WAIT
+            while (!dataPin.value()) continue; // NOTE: BLOCKING WAIT
             unsigned short const timeA = micros();
 
             // Wait for low signal, signifying start of next bit.
             // WARNING: This needs to be protected for potential hangs.
-            while (dataPin.state()) continue; // NOTE: BLOCKING WAIT
+            while (dataPin.value()) continue; // NOTE: BLOCKING WAIT
             unsigned short const timeB = micros();
             
             // If high signal lasted > ~30us, it's a 1, 0 otherwise.
@@ -107,8 +116,10 @@ Sensor::Data DHT22::sense() {
         }
     }
 
+    uint16_t const hRaw = ((static_cast<uint16_t>(data[0]) << 8) | data[1]);
+
     // Humidity (percentage) is in unsigned scalar format, x10 scaled.
-    float const humidity = static_cast<float>((static_cast<uint16_t>(data[0]) << 8) | data[1]) / 10;
+    float const humidity = static_cast<float>(hRaw) / 10;
 
     // Temperature (Celcius) is in signed-magnitude format, x10 scaled.
     uint16_t const tRaw = ((static_cast<uint16_t>(data[2]) << 8) | data[3]);
@@ -136,8 +147,9 @@ Sensor::Data DHT22::sense() {
     MJB_DEBUG_LOG(" ");
     MJB_DEBUG_LOG_FORMAT(data[1], MJB_DEBUG_LOG_BIN);
     MJB_DEBUG_LOG(" = ");
-    
-    MJB_DEBUG_LOG_LINE(humidity);
+    MJB_DEBUG_LOG(hRaw);
+    MJB_DEBUG_LOG(" | normalized = ");
+    MJB_DEBUG_LOG_LINE_FORMAT(humidity, MJB_DEBUG_LOG_DEC);
     
     MJB_DEBUG_LOG("[DHT22 <");
     MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
@@ -147,7 +159,9 @@ Sensor::Data DHT22::sense() {
     MJB_DEBUG_LOG_FORMAT(data[3], MJB_DEBUG_LOG_BIN);
     MJB_DEBUG_LOG(" = ");
     
-    MJB_DEBUG_LOG_LINE(temperature);
+    MJB_DEBUG_LOG(tRaw);
+    MJB_DEBUG_LOG(" | normalized = ");
+    MJB_DEBUG_LOG_LINE_FORMAT(temperature, MJB_DEBUG_LOG_DEC);
     
     MJB_DEBUG_LOG("[DHT22 <");
     MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
@@ -181,8 +195,6 @@ Sensor::Data DHT22::sense() {
         MJB_DEBUG_LOG_LINE(">] ERROR: Data is corrupted!");
     }
 #endif
-    
-    Sensor::sense(); // To activate a sensor timeout.
     
     return data;
 }

@@ -58,7 +58,7 @@ Actuator::Status Actuator::status() const
         MJB_DEBUG_LOG("[Actuator <");
         MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
         MJB_DEBUG_LOG(">] NOTICE: Waiting on timeout; remaining: ");
-        MJB_DEBUG_LOG_LINE_FORMAT((_actuateTime - elapsedTime), MJB_DEBUG_LOG_DEC);
+        MJB_DEBUG_LOG_LINE_FORMAT((_actuateTimeout - elapsedTime), MJB_DEBUG_LOG_DEC);
 #endif
         return Actuator::Status::WaitingOnTimeout;
     }
@@ -72,7 +72,13 @@ Actuator::Status Actuator::status() const
 void Actuator::actuate(Actuator::Actions const &actions)
 {
     _actuateTime = micros(); // Update actuation time to now.
-    
+
+#if defined(MJB_DEBUG_LOGGING_ACTUATOR)
+    MJB_DEBUG_LOG("[Actuator <");
+    MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
+    MJB_DEBUG_LOG_LINE(">] NOTICE: Actuating sequence.");
+#endif
+
     for (Actuator::Action const &action : actions) {
         // Note: Count is optimal here due to the fact _pins is a map log(n).
         // TODO: Consider throwing exception below if triggering foreign pin.

@@ -26,9 +26,9 @@ Thermostat::Status Thermostat::status() const
     return _status;
 }
 
-float Thermostat::humidity()
+Thermometer::TemperatureUnit::value_type Thermostat::humidity()
 {
-    float humidity = 0;
+    Thermometer::TemperatureUnit::value_type humidity = 0;
     
     for (std::shared_ptr<Thermometer> const &thermometer : thermometers)
     {

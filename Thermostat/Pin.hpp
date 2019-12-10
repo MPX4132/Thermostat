@@ -54,8 +54,8 @@ class Pin : public Accessible
     bool setMode(Mode const mode);
 
 
-    Value state() const;
-    bool setState(Value const state);
+    Value value() const;
+    bool setValue(Value const value);
 
     Configuration configuration() const;
     void setConfiguration(Configuration const &configuration);

@@ -29,7 +29,7 @@
 // We must wait about 2 seconds after sensing again with DHT22.
 // NOTE: If called while in cooldown, cached values are returned.
 // The value defined below represents the 2-second wait.
-#define DHT22_TIMEOUT 2000 // In microseconds
+#define DHT22_TIMEOUT 2000000 // In microseconds
 
 class DHT22 : public Thermometer
 {

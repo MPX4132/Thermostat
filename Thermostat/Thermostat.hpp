@@ -86,7 +86,7 @@ public:
     Status status() const;
     
     // This method returns the average humidity of all thermometers.
-    float humidity();
+    Thermometer::TemperatureUnit::value_type humidity();
     
     // This method returns the average humiture of all thermometers.
     Thermometer::TemperatureUnit humiture();

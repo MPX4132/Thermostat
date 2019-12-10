@@ -23,6 +23,8 @@ template<typename NumericType>
 class Temperature
 {
 public:
+    typedef NumericType value_type;
+
     enum Scale
     {
         Kelvin = 'K',

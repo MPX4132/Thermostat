@@ -23,11 +23,11 @@ Thermometer::TemperatureUnit Thermometer::humiture()
     
     // Returns the heat index, aka, the "feels like" temperature.
     // Heat Index is determined by Rothfusz Steadman's equation.
-    float const t = temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit);
-    float const h = humidity() / 100;
-    float const tt = t * t;
-    float const hh = h * h;
-    float const th = t * h;
+    Thermometer::TemperatureUnit::value_type const t = temperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit);
+    Thermometer::TemperatureUnit::value_type const h = humidity() / 100;
+    Thermometer::TemperatureUnit::value_type const tt = t * t;
+    Thermometer::TemperatureUnit::value_type const hh = h * h;
+    Thermometer::TemperatureUnit::value_type const th = t * h;
     
     // The formula below is used as an alternative to NOAA's
     // (obtained from Wikipedia), and integrates more temperatures.
@@ -47,7 +47,7 @@ Thermometer::TemperatureUnit Thermometer::humiture()
                                         Thermometer::TemperatureUnit::Scale::Fahrenheit);
 }
 
-float Thermometer::humidity()
+Thermometer::TemperatureUnit::value_type Thermometer::humidity()
 {
     sense(); // Attempt to get new sensory data.
     return _humidity;

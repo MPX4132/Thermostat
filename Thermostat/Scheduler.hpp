@@ -10,8 +10,9 @@
 #define Scheduler_hpp
 
 #include <set>
-#include <map>
+#include <unordered_map>
 #include <memory>
+#include <cstdint>
 #include <mutex>
 #include "Development.hpp"
 #include "Identifiable.hpp"
@@ -33,8 +34,9 @@ class SchedulerDelegate;
 class Scheduler : public Accessible, public Delegable<SchedulerDelegate>
 {
 public:
-    typedef unsigned long Time;
-    
+//    typedef unsigned long Time;
+    typedef uint32_t Time;
+
     // =========================================================================
     // Event: A schedualable class used to trigger one-time events.
     // =========================================================================
@@ -111,14 +113,12 @@ public:
     virtual ~Scheduler();
     
 protected:
-    
-    //typedef std::atomic<std::set<const std::shared_ptr<Scheduler>>> Schedules;
-//    typedef std::set<Scheduler * const> Schedules;
-
     // =========================================================================
     // Task: A wrapper for events to avoid potentially deleted memory, also
     // used to keep equal-priority elements together in a set.
     // =========================================================================
+    typedef std::unordered_set<std::shared_ptr<Event>> EventPtrSet;
+
     struct Task
     {
         bool operator<(Task const &other) const;
@@ -132,7 +132,7 @@ protected:
         // mutable because I've got a set of Task, and sets only return
         // const_iterator (or implicitly const iterator), and the events member
         // needs to be mutable (note, it doesn't affect Task's key/order in set).
-        mutable std::set<std::shared_ptr<Event>> events;
+        mutable EventPtrSet events;
         
         // For the assignment operator, the value below must be modifiable.
         Time priority; // Non-const becuase it's casted as const anyway by set.
@@ -146,18 +146,29 @@ protected:
     // priority I should stop at, and it's relevant because events must be
     // executed following their priority, so iterating over the map is impossible.
     // [Explanation: Because iterating over the map may result in mixed results.]
-    typedef std::set<Task> Tasks;
-    
-    Tasks _tasks;
-    Tasks _tasksOverflowed; // Holds Tasks to insert when time wraps around.
-    
+    typedef std::set<Task> TaskSet;
+
+    typedef std::pair<TaskSet *, TaskSet::const_iterator> EventLocation;
+
+    static const uint8_t _TaskSetsMax = 2;
+
+    TaskSet  _taskSets[_TaskSetsMax];
+    TaskSet *_taskSetPrimary;
+    TaskSet *_taskSetSecondary;
+
     Time _lastTime; // Last update cycle time.
-    
-    void _processEventsForTime(Time const priority);
-    
-    static bool _EnqueueTasksEvent(Tasks &tasks, std::shared_ptr<Event> const &event);
-    static bool _DequeueTasksEvent(Tasks &tasks, std::shared_ptr<Event> const &event);
-    
+
+    void _processEventsForTime(Time const time);
+    void _processTasksForTime(TaskSet const &tasks, Time const time);
+    void _processTasks(TaskSet const &tasks);
+
+    bool _enqueueEvent(std::shared_ptr<Event> const &event, TaskSet * const taskSet = nullptr);
+    bool _dequeueEvent(std::shared_ptr<Event> const &event, TaskSet * const taskSet = nullptr);
+
+    static EventLocation _GetEventLocation(Scheduler const * const scheduler,
+                                           std::shared_ptr<Scheduler::Event> const &event);
+
+
     // The following static member holds all instances created of Scheduler,
     // which the class uses to update by calling the static UpdateInstances
     // method once an update cycle is being executed.

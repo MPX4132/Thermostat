@@ -90,7 +90,7 @@ protected:
 };
 
 #if ! defined(MJB_ARDUINO_LIB_API)
-unsigned long micros();
+Scheduler::Time micros();
 #endif
 
 #endif /* Actuator_hpp */

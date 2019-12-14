@@ -13,10 +13,12 @@
 #include "Scheduler.hpp"
 #include "Thermostat.ino"
 
+constexpr Scheduler::Time TimeIncrement = 1; //static_cast<uint32_t>(static_cast<float>(4294967296) / 100);
+
 Scheduler::Time micros()
 {
-    static Scheduler::Time fakeTime = 0;
-    return fakeTime += 20;
+    static Scheduler::Time fakeTime = 0; //((~static_cast<uint32_t>(0)) - 50);
+    return fakeTime += TimeIncrement;
 }
 
 int main(int argc, const char * argv[]) {

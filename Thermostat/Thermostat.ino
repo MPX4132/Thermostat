@@ -49,7 +49,7 @@ Thermostat thermostat(Pin::Arrangement({
 }), Thermostat::Thermometers({
     // DHT22 should stabilize while waiting for WIFI to connect.
     thermometer
-}));
+}), 5000000);
 
 #if defined(MJB_ARDUINO_LIB_API)
 // Prepare the web server object with typical port 80 for HTTP requests.

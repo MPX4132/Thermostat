@@ -143,7 +143,8 @@ void setup()
             
             if (scalePosition > 0) // Check if it was found after 0, otherwise it's malformed.
             {
-                char const scale = tempArgument[scalePosition];
+                Thermometer::TemperatureUnit::Scale const scale =
+                    static_cast<Thermometer::TemperatureUnit::Scale>(tempArgument[scalePosition]);
                 
                 tempArgument.remove(scalePosition); // Remove scale to parse value.
                 float const value = tempArgument.toFloat(); // Parse value, 0 COULD be failure.
@@ -152,7 +153,10 @@ void setup()
                 // if it is 0 we must check it indeed was set and isn't an issue with parsing.
                 if (value || (tempArgument.length() == 1 && tempArgument[0] == '0'))
                 {
-                    thermostat.setTargetTemperature(Temperature<float>(value, static_cast<Temperature<float>::Scale>(scale)));
+                    Thermometer::TemperatureUnit::value_type temperatureThreshold =
+                        (thermostat.mode() == Thermostat::Mode::Auto)? 1.0000 : 0.5000;
+                    thermostat.setTargetTemperature(Thermometer::TemperatureUnit(value, scale));
+                    thermostat.setTargetTemperatureThreshold(std::make_pair(temperatureThreshold, scale));
                 }
             }
         }

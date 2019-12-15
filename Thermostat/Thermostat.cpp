@@ -77,11 +77,19 @@ Thermometer::TemperatureUnit Thermostat::targetTemperature() const
     return _targetTemperature;
 }
 
-void Thermostat::setTargetTemperature(Thermometer::TemperatureUnit const &targetTemperature,
-                                      float const targetTemperatureThreshold)
+void Thermostat::setTargetTemperature(Thermometer::TemperatureUnit const &targetTemperature)
+{
+    _targetTemperature = targetTemperature;
+}
+
+Thermostat::TemperatureThreshold Thermostat::targetTemperatureThreshold() const
+{
+    return _targetTemperatureThreshold;
+}
+
+void Thermostat::setTargetTemperatureThreshold(Thermostat::TemperatureThreshold const & targetTemperatureThreshold)
 {
     _targetTemperatureThreshold = targetTemperatureThreshold;
-    _targetTemperature = targetTemperature;
 }
 
 Thermostat::PerceptionIndex Thermostat::perceptionIndex() const
@@ -158,7 +166,40 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     // Read this only once every update, since the sensor may need to timeout for a bit.
     // In my case, the DHT22 needs to timeout for about two seconds after a read cycle.
     Thermometer::TemperatureUnit const currentTemperature = perceptionIndex()? humiture() : temperature();
-    
+
+    const Thermometer::TemperatureUnit::value_type temperatureThreshold = _targetTemperatureThreshold.first;
+    const Thermometer::TemperatureUnit::Scale temperatureThresholdScale = _targetTemperatureThreshold.second;
+
+    switch (mode())
+    {
+        case Off: _status = _standby();
+            break;
+            
+        case Heat: _status = _setHeater(currentTemperature.value(temperatureThresholdScale) <
+                                        (targetTemperature().value(temperatureThresholdScale) + temperatureThreshold));
+            break;
+            
+        case Cool: _status = _setCooler(currentTemperature.value(temperatureThresholdScale) >
+                                        (targetTemperature().value(temperatureThresholdScale) - temperatureThreshold));
+            break;
+            
+        case Auto: {
+            if (currentTemperature.value(temperatureThresholdScale) <
+                (targetTemperature().value(temperatureThresholdScale) - temperatureThreshold)) {
+                _status = _setHeater(true);
+            } else
+            if (currentTemperature.value(temperatureThresholdScale) >
+                (targetTemperature().value(temperatureThresholdScale) + temperatureThreshold)) {
+                _status = _setCooler(true);
+            } else {
+                _status = _standby(Thermostat::Status::Stasis);
+            }
+        }   break;
+            
+        default: _status = _standby();
+            break;
+    }
+
 #if defined(MJB_DEBUG_LOGGING_THERMOSTAT)
     MJB_DEBUG_LOG("[Thermostat <");
     MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
@@ -168,13 +209,17 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     MJB_DEBUG_LOG(humiture().value(Thermometer::TemperatureUnit::Scale::Fahrenheit));
     MJB_DEBUG_LOG("F, Humidity:");
     MJB_DEBUG_LOG(humidity());
-    MJB_DEBUG_LOG_LINE("%");
-    
+    MJB_DEBUG_LOG("% Target: ");
+    MJB_DEBUG_LOG_FORMAT(targetTemperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit), MJB_DEBUG_LOG_DEC);
+    MJB_DEBUG_LOG_LINE("F");
+
     MJB_DEBUG_LOG("[Thermostat <");
     MJB_DEBUG_LOG_FORMAT((unsigned long) this, MJB_DEBUG_LOG_HEX);
-    MJB_DEBUG_LOG(">] Target:");
-    MJB_DEBUG_LOG_FORMAT(targetTemperature().value(Thermometer::TemperatureUnit::Scale::Fahrenheit), MJB_DEBUG_LOG_DEC);
-    MJB_DEBUG_LOG("F, Perceivable Index:");
+    MJB_DEBUG_LOG(">] Threshold:");
+    MJB_DEBUG_LOG_FORMAT(targetTemperatureThreshold().first, MJB_DEBUG_LOG_DEC);
+    MJB_DEBUG_LOG(((targetTemperatureThreshold().second == Thermometer::TemperatureUnit::Scale::Fahrenheit)? "F" :
+                   ((targetTemperatureThreshold().second == Thermometer::TemperatureUnit::Scale::Celsius)?  "C" :  "K")));
+    MJB_DEBUG_LOG(", Perceivable Index:");
     MJB_DEBUG_LOG(perceptionIndex());
     MJB_DEBUG_LOG(", Mode:");
     MJB_DEBUG_LOG(mode());
@@ -183,32 +228,6 @@ int Thermostat::execute(Scheduler::Time const updateTime)
     MJB_DEBUG_LOG(" at ");
     MJB_DEBUG_LOG_LINE(updateTime);
 #endif
-    
-    switch (mode())
-    {
-        case Off: _status = _standby();
-            break;
-            
-        case Heat: _status = _setHeater(currentTemperature < targetTemperature());
-            break;
-            
-        case Cool: _status = _setCooler(currentTemperature > targetTemperature());
-            break;
-            
-        case Auto: {
-            if (currentTemperature > (targetTemperature() + _targetTemperatureThreshold)) {
-                _status = _setCooler(true);
-            } else
-            if (currentTemperature < (targetTemperature() - _targetTemperatureThreshold)) {
-                _status = _setHeater(true);
-            } else {
-                _status = _standby(Thermostat::Status::Stasis);
-            }
-        }   break;
-            
-        default: _status = _standby();
-            break;
-    }
     
     return Thermostat::ExecutionCode::Success;
 }
@@ -222,6 +241,7 @@ Thermostat::Thermostat(Pin::Arrangement const &pins,
                        Scheduler::Time const executeTimeInterval):
 Scheduler::Daemon(0, executeTimeInterval),
 thermometers(thermometers),
+_targetTemperatureThreshold(std::make_pair(1, Thermometer::TemperatureUnit::Scale::Fahrenheit)),
 _perceptionIndex(Thermostat::PerceptionIndex::TemperatureIndex),
 _status(Thermostat::Status::Standby),
 _mode(Thermostat::Mode::Off),

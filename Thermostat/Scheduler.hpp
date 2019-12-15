@@ -9,11 +9,12 @@
 #ifndef Scheduler_hpp
 #define Scheduler_hpp
 
-#include <set>
-#include <unordered_map>
-#include <memory>
+#include <utility>
 #include <cstdint>
+#include <memory>
 #include <mutex>
+#include <set>
+#include <unordered_set>
 #include "Development.hpp"
 #include "Identifiable.hpp"
 #include "Accessible.hpp"

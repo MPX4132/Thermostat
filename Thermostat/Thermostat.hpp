@@ -9,6 +9,7 @@
 #ifndef Thermostat_hpp
 #define Thermostat_hpp
 
+#include <utility>
 #include <vector>
 #include "Development.hpp"
 #include "Temperature.hpp"
@@ -34,6 +35,8 @@ public:
     // Thermostat Types
     // ================================================================
     typedef std::vector<std::shared_ptr<Thermometer>> Thermometers;
+    typedef std::pair<Thermometer::TemperatureUnit::value_type,
+                      Thermometer::TemperatureUnit::Scale> TemperatureThreshold;
     
     enum Mode
     {
@@ -95,9 +98,10 @@ public:
     Thermometer::TemperatureUnit temperature();
     
     Thermometer::TemperatureUnit targetTemperature() const;
-    void setTargetTemperature(Thermometer::TemperatureUnit const &targetTemperature,
-                              // About a degree (F/C) of threshold
-                              float const targetTemperatureThreshold = 1);
+    void setTargetTemperature(Thermometer::TemperatureUnit const &targetTemperature);
+
+    TemperatureThreshold targetTemperatureThreshold() const;
+    void setTargetTemperatureThreshold(TemperatureThreshold const &targetTemperatureThreshold);
 
     PerceptionIndex perceptionIndex() const;
     void setPerceptionIndex(PerceptionIndex const perceptionIndex = TemperatureIndex);
@@ -113,7 +117,7 @@ public:
     
 protected:
     Thermometer::TemperatureUnit _targetTemperature;
-    float _targetTemperatureThreshold;
+    TemperatureThreshold _targetTemperatureThreshold;
     PerceptionIndex _perceptionIndex;
     Status _status;
     Mode _mode;
